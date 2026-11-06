@@ -1,10 +1,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cornell Nutrition</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&display=swap">
+<meta name="description" content="Search every Cornell Dining menu, see nutrition and allergens, and find what's open now.">
+<meta name="theme-color" content="#b31b1b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23b31b1b'/%3E%3Ctext x='16' y='22.5' font-family='Arial,sans-serif' font-size='17' font-weight='700' fill='white' text-anchor='middle'%3ECN%3C/text%3E%3C/svg%3E">
 <style>
 /* Layout: one narrow column, one step at a time: places, then a menu, then one item. */
 :root {
@@ -17,7 +16,7 @@
   --on-accent: #ffffff;
   --leaf: #12805c;
   --warn: #a16207;
-  --font: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ease: cubic-bezier(.2, .8, .2, 1);
 }
 @media (prefers-color-scheme: dark) {
@@ -33,7 +32,7 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { background: var(--bg); color: var(--ink); font: 400 16px/1.45 var(--font); font-optical-sizing: auto; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; background: none; border: 0; padding: 0; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
@@ -46,8 +45,8 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
   .shell { grid-template-columns: minmax(240px, 1fr) minmax(0, 680px) minmax(260px, 1fr); gap: 36px; padding-inline: 28px; }
   .rail { display: block; position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; scrollbar-width: none; padding-block: 30px 40px; width: 100%; max-width: 300px; }
   .rail::-webkit-scrollbar { display: none; }
-  .rail-l { justify-self: end; animation: in-back .6s var(--ease) both .15s; }
-  .rail-r { justify-self: start; animation: in-fwd .6s var(--ease) both .25s; }
+  .rail-l { justify-self: end; }
+  .rail-r { justify-self: start; }
 }
 .rail h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; }
 .rail h4 + .rnote { margin-top: -6px; }
@@ -56,7 +55,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .openrow { display: flex; align-items: center; gap: 10px; width: calc(100% + 20px); text-align: left; padding: 8px 10px; margin: 0 -10px; border-radius: 10px; font-size: 14.5px; transition: background .2s; }
 .openrow:hover { background: var(--card); }
 .openrow .dot { width: 8px; height: 8px; border-radius: 99px; background: #9a9090; flex: none; }
-.openrow .dot.on { background: #16a34a; animation: pulse 2s infinite; }
+.openrow .dot.on { background: #16a34a; }
 .openrow b { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .openrow small { color: var(--muted); white-space: nowrap; font-size: 12.5px; }
 .hall { padding: 12px 0; border-top: 1px solid var(--line); }
@@ -67,12 +66,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .hall ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
 .hall li { font-size: 13.5px; line-height: 1.35; padding-left: 12px; position: relative; }
 .hall li::before { content: ""; position: absolute; left: 0; top: .55em; width: 5px; height: 5px; border-radius: 99px; background: var(--accent); }
-.ev { display: block; text-decoration: none; color: inherit; border-radius: 16px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); transition: transform .3s var(--ease), box-shadow .3s; }
+.ev { display: block; text-decoration: none; color: inherit; border-radius: 12px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); transition: transform .3s var(--ease), box-shadow .3s; }
 .ev + .ev { margin-top: 12px; }
-.ev:hover { transform: translateY(-3px); box-shadow: 0 0 0 1.5px var(--accent), 0 14px 26px -16px var(--accent); }
+.ev:hover { box-shadow: 0 0 0 1px var(--muted); }
 .ev .pic { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; background: var(--line); }
-.ev .pic img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--ease); }
-.ev:hover .pic img { transform: scale(1.06); }
+.ev .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ev .date { position: absolute; left: 10px; top: 10px; background: #fff; color: #1a1414; border-radius: 10px; padding: 4px 8px 5px; text-align: center; line-height: 1; box-shadow: 0 2px 8px rgb(0 0 0 / 18%); }
 .ev .date small { display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: #b31b1b; }
 .ev .date b { font-size: 20px; font-weight: 800; }
@@ -86,21 +84,14 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 @media (min-width: 1180px) { .ev-strip, .ev-label { display: none; } }
 .app { min-width: 0; width: 100%; max-width: 680px; margin: 0 auto; padding-block: 28px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-.mark { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+.mark { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; color: inherit; text-decoration: none; }
 .mark span { color: var(--accent); }
 .tag { font-size: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 3px 9px; }
 .search { position: relative; display: block; margin-bottom: 28px; }
-.search input { width: 100%; border: 0; border-radius: 16px; background: var(--card); padding: 16px 18px 16px 48px; font-size: 17px; box-shadow: 0 0 0 1px var(--line); transition: box-shadow .2s; }
+.search input { width: 100%; border: 0; border-radius: 12px; background: var(--card); padding: 16px 18px 16px 48px; font-size: 17px; box-shadow: 0 0 0 1px var(--line); transition: box-shadow .2s; }
 .search input:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
 .search svg { position: absolute; left: 18px; top: 50%; translate: 0 -50%; color: var(--muted); }
 
-/* Views slide in from the side they logically come from. */
-.view { animation: in-fwd .38s var(--ease) both; }
-.view.back { animation-name: in-back; }
-@keyframes in-fwd { from { opacity: 0; transform: translateX(28px); } }
-@keyframes in-back { from { opacity: 0; transform: translateX(-28px); } }
-.stagger > * { animation: rise .45s var(--ease) both; animation-delay: calc(var(--i, 0) * 28ms); }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 
 .eyebrow { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; margin: 0 0 6px; }
 h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em; font-weight: 800; margin: 0; text-wrap: balance; }
@@ -110,22 +101,22 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 .place { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; text-align: left; padding: 14px 2px; border-bottom: 1px solid var(--line); }
 .place b { font-size: clamp(22px, 4.6vw, 30px); font-weight: 700; letter-spacing: -0.025em; transition: transform .25s var(--ease), color .2s; }
 .place small { color: var(--muted); font-size: 14px; white-space: nowrap; }
-.place:hover b { color: var(--accent); transform: translateX(6px); }
+.place:hover b { color: var(--accent); }
 
 .place .what { display: block; font-size: 13.5px; color: var(--muted); font-weight: 400; margin-top: 2px; }
 .place > span { min-width: 0; }
 .picks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 34px; }
-.pick { text-align: left; background: var(--card); border-radius: 16px; padding: 14px 14px 12px; box-shadow: 0 0 0 1px var(--line); transition: transform .25s var(--ease), box-shadow .2s; }
-.pick:hover { transform: translateY(-3px); box-shadow: 0 0 0 1.5px var(--accent), 0 10px 22px -12px var(--accent); }
+.pick { text-align: left; background: var(--card); border-radius: 12px; padding: 14px 14px 12px; box-shadow: 0 0 0 1px var(--line); transition: transform .25s var(--ease), box-shadow .2s; }
+.pick:hover { box-shadow: 0 0 0 1px var(--muted); }
 .pick b { display: block; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 .pick small { color: var(--muted); font-size: 12.5px; }
-.pick i { display: block; font-style: normal; font-size: 22px; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 10px; letter-spacing: -0.03em; }
+.pick i { display: block; font-style: normal; font-size: 22px; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 10px; letter-spacing: -0.02em; }
 @media (max-width: 560px) { .picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* "Where should I go?" */
-.ask { margin: 0 0 34px; padding: 20px 20px 18px; border-radius: 20px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.ask { margin: 0 0 34px; padding: 20px 20px 18px; border-radius: 12px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
 .ask-q { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; font-size: 19px; font-weight: 700; letter-spacing: -0.015em; }
-.ask-step { margin-top: 20px; animation: rise .45s var(--ease) both; }
+.ask-step { margin-top: 20px; }
 .ask .chip { font-size: 14.5px; padding: 8px 14px; }
 .chip.loc { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); }
 .chip.loc.sel { color: var(--on-accent); }
@@ -133,7 +124,7 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 .ask-out:not(:empty) { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .ask-sum { margin: 0 0 14px; font-size: 15.5px; line-height: 1.45; }
 .sugg { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.sugg li { display: grid; border-radius: 16px; box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+.sugg li { display: grid; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 .sugg li:first-child { box-shadow: 0 0 0 1.5px var(--accent); }
 .sg { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; text-align: left; }
 .sg .mark { width: 44px; height: 44px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px var(--line); }
@@ -143,7 +134,7 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 .sg small { color: var(--muted); font-size: 13px; }
 .sg small .open { color: var(--leaf); font-weight: 600; }
 .sg:hover b { color: var(--accent); }
-.sg-min { text-align: right; font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.sg-min { text-align: right; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .sg-min small { display: block; font-size: 11.5px; font-weight: 500; letter-spacing: 0; margin-top: 3px; }
 .sg-try { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; text-align: left; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--accent) 5%, var(--card)); font-size: 14.5px; transition: background .2s; }
 .sg-try:hover { background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
@@ -158,29 +149,25 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 /* Logo tiles: real logos sit on white (they're drawn for white); the rest get a red monogram. */
 .tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 @media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
-.tile { display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; background: var(--card); border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); transition: transform .3s var(--ease), box-shadow .3s; }
-.tile:hover { transform: translateY(-4px); box-shadow: 0 0 0 1.5px var(--accent), 0 16px 30px -18px var(--accent); }
+.tile { display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); transition: transform .3s var(--ease), box-shadow .3s; }
+.tile:hover { box-shadow: 0 0 0 1px var(--muted); }
 .tile .art { aspect-ratio: 4 / 3; max-width: 100%; display: grid; place-items: center; overflow: hidden; }
-.tile .art > * { transition: transform .45s var(--ease); }
-.tile:hover .art > * { transform: scale(1.06); }
 .tile .txt { padding: 12px 14px 14px; display: grid; gap: 2px; border-top: 1px solid var(--line); flex: 1; align-content: start; }
 .tile b { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
 .tile small { color: var(--muted); font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .logo { background: #ffffff; }
 .logo img { width: 78%; height: 78%; object-fit: contain; }
 .mono { background: var(--accent); color: #fff; }
-.mono > span:not(.status) { font-size: clamp(38px, 9vw, 56px); font-weight: 800; letter-spacing: -0.05em; line-height: 1; }
+.mono > span:not(.status) { font-size: clamp(38px, 9vw, 56px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .mono.alt { background: var(--ink); color: var(--bg); }
-.head-logo { width: 64px; height: 64px; flex: none; border-radius: 14px; overflow: hidden; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); animation: pop-in .5s var(--ease) both .1s; }
-.head-logo .mono-s { font-size: 24px; font-weight: 800; letter-spacing: -0.04em; }
-@keyframes pop-in { from { transform: scale(.6) rotate(-6deg); opacity: 0; } }
+.head-logo { width: 64px; height: 64px; flex: none; border-radius: 14px; overflow: hidden; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); }
+.head-logo .mono-s { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
 .title-row { display: flex; align-items: center; gap: 14px; min-width: 0; }
 
 .tile .art { position: relative; }
 .status { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 99px; background: rgb(255 255 255 / 92%); color: #1a1414; box-shadow: 0 1px 3px rgb(0 0 0 / 12%); }
 .status::before { content: ""; width: 7px; height: 7px; border-radius: 99px; background: #9a9090; }
-.status.open::before { background: #16a34a; box-shadow: 0 0 0 0 rgb(22 163 74 / 60%); animation: pulse 2s infinite; }
-@keyframes pulse { 70% { box-shadow: 0 0 0 7px rgb(22 163 74 / 0%); } 100% { box-shadow: 0 0 0 0 rgb(22 163 74 / 0%); } }
+.status.open::before { background: #16a34a; }
 .lines { list-style: none; margin: 0; padding: 0; }
 .meta-line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--muted); }
 .meta-line .open { color: #16a34a; font-weight: 600; }
@@ -200,9 +187,6 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 .tab small { font-weight: 500; font-size: 12px; margin-left: 5px; opacity: .7; }
 .tab[aria-selected="true"] { color: var(--ink); }
 .ink { position: absolute; left: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); transition: transform .35s var(--ease), width .35s var(--ease); }
-.tab-body { animation: fade .3s var(--ease) both; }
-.tab-body.from-right { animation: in-fwd .32s var(--ease) both; }
-.tab-body.from-left { animation: in-back .32s var(--ease) both; }
 .tab-body > .note { margin: 14px 0 0; }
 .vline summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; color: #16a34a; font-weight: 600; }
 .vline summary::-webkit-details-marker { display: none; }
@@ -214,35 +198,15 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 .seg2 button.sel { color: var(--on-accent); }
 .seg2 .thumb { position: absolute; z-index: 0; left: 0; top: 4px; bottom: 4px; border-radius: 99px; background: var(--accent); transition: transform .4s var(--ease), width .4s var(--ease); }
 .item .kc i { font-style: normal; color: var(--muted); font-weight: 400; margin: 0 1px; }
-.item { transition: background .2s; border-radius: 10px; }
-.item:active { transform: scale(.985); }
-.tile { transform-style: preserve-3d; will-change: transform; }
+.item { transition: background .2s; }
 
-.mark { display: inline-flex; align-items: center; gap: 8px; }
-.spark { width: 22px; height: 22px; color: var(--accent); flex: none; overflow: visible; animation: drift 40s linear infinite; }
-.spark line { transform-box: view-box; transform-origin: 20px 20px; }
-.spark.thinking line { animation: breathe .9s cubic-bezier(.45, 0, .55, 1) both; animation-delay: calc(var(--r) * 55ms); }
-.spark.thinking { animation: drift 40s linear infinite, nudge .9s var(--ease); }
-.spark.sm { width: 16px; height: 16px; }
-.big .think-spark { position: absolute; right: 0; bottom: 14px; width: 26px; height: 26px; opacity: 0; transition: opacity .3s; }
-.big.think .think-spark { opacity: 1; }
-@keyframes drift { to { transform: rotate(360deg); } }
-@keyframes breathe { 0%, 100% { transform: scale(1); } 45% { transform: scale(.35); } 70% { transform: scale(1.15); } }
-@keyframes nudge { 50% { scale: 1.15; } }
-.w { display: inline-block; animation: word-in .55s var(--ease) both; animation-delay: calc(var(--d) * var(--step, 38ms)); }
-@keyframes word-in { from { opacity: 0; filter: blur(8px); transform: translateY(.2em); } }
 .insight { display: flex; gap: 9px; align-items: flex-start; margin: 16px 0 0; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 7%, var(--card)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, var(--line)); font-size: 15px; line-height: 1.45; }
-.insight .spark.sm { margin-top: 3px; }
-.big { overflow: visible; }
-.big::after { content: ""; position: absolute; inset: -6px -12px; pointer-events: none; opacity: 0; background: linear-gradient(105deg, transparent 30%, color-mix(in srgb, var(--card) 85%, transparent) 50%, transparent 70%); background-size: 250% 100%; }
-.big.think::after { animation: shimmer .8s var(--ease); }
-@keyframes shimmer { 0% { opacity: 1; background-position: 120% 0; } 100% { opacity: 1; background-position: -60% 0; } }
 .lean { display: block; width: calc(100% + 20px); text-align: left; padding: 10px; margin: 0 -10px; border-radius: 12px; transition: background .2s; }
 .lean:hover { background: var(--card); }
 .lean b { display: block; font-size: 14px; font-weight: 600; line-height: 1.3; }
 .lean small { display: block; font-size: 12px; color: var(--muted); }
 .lean-bar { display: block; height: 4px; border-radius: 99px; background: var(--line); margin: 7px 0 4px; overflow: hidden; }
-.lean-bar span { display: block; height: 100%; width: var(--w); border-radius: inherit; background: var(--accent); animation: grow 1s var(--ease) both .3s; transform-origin: left; }
+.lean-bar span { display: block; height: 100%; width: var(--w); border-radius: inherit; background: var(--accent); }
 .lean-n { font-size: 12.5px; color: var(--muted); }
 .lean-n b { display: inline; color: var(--ink); font-size: 12.5px; }
 
@@ -250,7 +214,6 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 .back-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 15px; font-weight: 500; margin-bottom: 14px; padding: 4px 0; }
 .back-btn:hover { color: var(--ink); }
 .back-btn svg { transition: transform .2s var(--ease); }
-.back-btn:hover svg { transform: translateX(-3px); }
 .menu-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 8px; }
 .filter-btn { flex: none; border-radius: 99px; padding: 8px 14px; font-size: 14px; font-weight: 600; box-shadow: 0 0 0 1px var(--line); background: var(--card); }
 .filter-btn.on { background: var(--accent); color: var(--on-accent); box-shadow: none; }
@@ -265,17 +228,15 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em
 .item .sub { display: block; font-size: 13px; color: var(--muted); font-weight: 400; margin-top: 1px; }
 .item .sub .veg { color: var(--leaf); }
 .item { position: relative; }
-.item .bar { position: absolute; left: 2px; bottom: -1px; height: 2px; width: var(--w); background: var(--accent); opacity: .55; transform-origin: left; animation: grow .7s var(--ease) both; animation-delay: calc(120ms + var(--i, 0) * 28ms); }
-@keyframes grow { from { transform: scaleX(0); } }
+.item .bar { position: absolute; left: 2px; bottom: -1px; height: 2px; width: var(--w); background: var(--accent); opacity: .55; }
 .item:hover .bar { opacity: 1; }
 .item .kc { font-weight: 700; font-size: 19px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .item .kc small { font-weight: 400; font-size: 12px; color: var(--muted); margin-left: 3px; }
-.item:hover .nm { transform: translateX(4px); }
 .empty { color: var(--muted); padding: 40px 0; text-align: center; }
 
 /* Item */
 .big { display: flex; align-items: flex-end; gap: 10px; margin: 26px 0 6px; position: relative; }
-.roll { display: inline-flex; font-size: clamp(76px, 18vw, 120px); font-weight: 800; letter-spacing: -0.05em; line-height: 1; height: 1em; overflow: hidden; font-variant-numeric: tabular-nums; }
+.roll { display: inline-flex; font-size: clamp(76px, 18vw, 120px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; height: 1em; overflow: hidden; font-variant-numeric: tabular-nums; }
 .roll .col { display: inline-block; height: 1em; overflow: hidden; }
 .roll .strip { display: flex; flex-direction: column; transition: transform .6s var(--ease); }
 .roll .strip span { height: 1em; }
@@ -340,7 +301,7 @@ details.ingr p { color: var(--muted); font-size: 14px; line-height: 1.55; }
 /* Filters sheet */
 .scrim { position: fixed; inset: 0; z-index: 20; background: rgb(20 8 8 / 45%); animation: fade .25s both; }
 @keyframes fade { from { opacity: 0; } }
-.sheet { position: fixed; z-index: 21; left: 50%; bottom: 0; width: min(680px, 100%); translate: -50% 0; background: var(--bg); border-radius: 22px 22px 0 0; padding: 22px max(20px, env(safe-area-inset-left, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)); max-height: 86vh; overflow: auto; animation: up .38s var(--ease) both; }
+.sheet { position: fixed; z-index: 21; left: 50%; bottom: 0; width: min(680px, 100%); translate: -50% 0; background: var(--bg); border-radius: 12px 22px 0 0; padding: 22px max(20px, env(safe-area-inset-left, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)); max-height: 86vh; overflow: auto; animation: up .38s var(--ease) both; }
 @keyframes up { from { transform: translateY(100%); } }
 .sheet h3 { font-size: 15px; margin: 22px 0 10px; }
 .sheet h3:first-of-type { margin-top: 4px; }
@@ -350,16 +311,8 @@ details.ingr p { color: var(--muted); font-size: 14px; line-height: 1.55; }
 footer { margin-top: 56px; color: var(--muted); font-size: 13px; }
 footer a { color: inherit; }
 
-/* Reduce motion: keep the gentle effects (fades, blur-ins, the breathing spark, rolling digits)
-   and swap anything that travels across the screen for a plain fade. */
 @media (prefers-reduced-motion: reduce) {
-  .view, .view.back, .tab-body.from-right, .tab-body.from-left, .rail-l, .rail-r, .stagger > *, .sheet { animation-name: fade; }
-  .w { animation-name: word-fade; }
-  @keyframes word-fade { from { opacity: 0; filter: blur(8px); } }
-  .tile:hover, .pick:hover, .ev:hover { transform: none; }
-  .place:hover b, .item:hover .nm { transform: none; }
-  .spark { animation: none; }
-  .spark.thinking { animation: none; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 </style>
 
@@ -368,7 +321,7 @@ footer a { color: inherit; }
 <aside class="rail rail-l" id="railL" aria-label="Open now and dining halls"></aside>
 <div class="app">
   <div class="top">
-    <div class="mark"><span id="sparkSlot"></span>Cornell <span>Nutrition</span></div>
+    <a class="mark" href="./">Cornell <span>Nutrition</span></a>
     <span class="tag">Unofficial</span>
   </div>
   <label class="search">
@@ -426,13 +379,44 @@ function go(view, opts = {}, back = false) {
   Object.assign(S, opts, { view });
   render(back);
   scrollTo({ top: back ? S.scroll[view] || 0 : 0, behavior: "instant" });
+  history.pushState(navState((history.state?.depth ?? 0) + 1), "", hashFor());
 }
+// Each screen gets a history entry and a shareable URL (#/place/12, #/item/345, #/pick/protein),
+// so the phone's back button and links behave like a normal site.
+const NAV = ["view", "eatery", "tab", "pick", "item", "groupIds", "from", "base", "q"];
+function navState(depth) { const o = { depth }; for (const k of NAV) o[k] = S[k] ?? null; return o; }
+function hashFor() {
+  const h = S.view === "menu" ? `#/place/${S.eatery}` : S.view === "pick" ? `#/pick/${S.pick}` : S.view === "item" ? `#/item/${S.item}` : "";
+  return h || location.pathname + location.search;
+}
+const itemOpts = (it) => ({ item: it.id, servings: startServings(it), removed: new Set(), extras: new Set(), size: 16, milk: it.drink?.milk ?? "None", pumps: 0, whip: false });
+const groupOf = (ids) => (ids ? groupRows(ids.map((x) => ITEMS[x]))[0].group : null);
+function fromHash() {
+  const [, kind, id] = location.hash.match(/^#\/(place|pick|item)\/([\w-]+)/) || [];
+  const it = ITEMS[id];
+  if (kind === "place" && DATA.eateries.some((e) => e.id === +id)) Object.assign(S, { view: "menu", eatery: +id, tab: 0 });
+  else if (kind === "pick" && PICKS[id]) Object.assign(S, { view: "pick", pick: id });
+  else if (kind === "item" && it && HOME[it.id]) Object.assign(S, { view: "item", eatery: HOME[it.id].eatery.id, from: "menu", group: null, groupIds: null, ...itemOpts(it) });
+  else S.view = "places";
+}
+addEventListener("popstate", (ev) => {
+  const st = ev.state;
+  if (!st) fromHash();
+  else {
+    for (const k of NAV) S[k] = st[k];
+    S.group = groupOf(S.groupIds);
+    if (S.view === "item") Object.assign(S, itemOpts(ITEMS[S.item]));
+  }
+  $("#q").value = S.q || "";
+  lastCal = null;
+  $("#sheetRoot").innerHTML = "";
+  render(true);
+  scrollTo({ top: S.scroll[S.view] || 0, behavior: "instant" });
+});
 function render(back) {
   lastInsight = "";
   const v = $("#view");
   v.className = "";
-  void v.offsetWidth; // restart the slide-in animation
-  v.className = "view" + (back ? " back" : "");
   if (S.q && S.view !== "item") v.innerHTML = searchHTML();
   else if (S.view === "places") v.innerHTML = placesHTML();
   else if (S.view === "menu") v.innerHTML = menuHTML();
@@ -440,18 +424,6 @@ function render(back) {
   else { v.innerHTML = itemHTML(); update(true); }
   watchMini();
   requestAnimationFrame(moveInk);
-  const h1 = $("#view h1"); if (h1) streamWords(h1);
-  think();
-  if (S.view === "places" && !S.q) document.querySelectorAll(".pick i").forEach((el) => { const to = +el.textContent; el.textContent = "0"; tween(el, to, "", 900); });
-}
-// Café tiles lean slightly toward the pointer.
-if (!reduced && matchMedia("(hover: hover)").matches) {
-  $("#view").addEventListener("pointermove", (ev) => {
-    const t = ev.target.closest(".tile"); if (!t) return;
-    const r = t.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width - 0.5, y = (ev.clientY - r.top) / r.height - 0.5;
-    t.style.transform = `perspective(700px) rotateX(${(-y * 7).toFixed(2)}deg) rotateY(${(x * 9).toFixed(2)}deg) translateY(-4px)`;
-  });
-  $("#view").addEventListener("pointerout", (ev) => { const t = ev.target.closest(".tile"); if (t && !t.contains(ev.relatedTarget)) t.style.transform = ""; });
 }
 // When the big calorie number scrolls away, pin a small readout to the top.
 let miniObs;
@@ -464,6 +436,7 @@ function watchMini() {
 }
 addEventListener("keydown", (e) => { if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); return; } if (e.key === "Escape") { if ($("#sheetRoot").innerHTML) closeSheet(); else goBack(); } });
 function goBack() {
+  if (history.state?.depth > 0) return history.back();
   if (S.view === "item") go(S.from === "search" ? S.base : S.from, {}, true);
   else if ((S.view === "menu" || S.view === "pick") && !S.q) go("places", {}, true);
 }
@@ -536,7 +509,7 @@ function suggestions() {
 }
 function askHTML() {
   return `<section class="ask" aria-label="Where should I go?">
-    <p class="ask-q">${sparkSVG("sm", "askSpark")}<span>What are you in the mood for?</span></p>
+    <p class="ask-q">What are you in the mood for?</p>
     <div class="chips">${Object.entries(WANTS).map(([k, w]) => `<button class="chip ${S.want === k ? "sel" : ""}" data-want="${k}">${w.label}</button>`).join("")}</div>
     <div id="askWhere">${S.want ? whereHTML() : ""}</div>
     <div class="ask-out" id="askOut" aria-live="polite">${S.want && S.at ? suggHTML() : ""}</div>
@@ -562,8 +535,6 @@ function suggHTML() {
 function refreshAsk() {
   const out = $("#askOut"); if (!out) return;
   out.innerHTML = S.want && S.at ? suggHTML() : "";
-  breathe($("#askSpark"));
-  const sum = $("#askSum"); if (sum) streamWords(sum, null, 30);
 }
 function askClick(d, t) {
   if (d.want) {
@@ -823,9 +794,9 @@ function itemHTML() {
     <h1 id="itemName">${esc(S.group ? S.group.title : it.name)}</h1>
     ${it.desc ? `<p class="lede">${esc(cleanDesc(it.desc))}${/[.!]$/.test(it.desc.trim()) ? "" : "."}</p>` : it.about ? `<p class="lede">${esc(describe(it))}.</p>` : ""}
     ${sourceLine(it, home)}
-    <div class="big"><span class="roll" id="roll" aria-live="polite"></span><span class="unit">calories</span>${sparkSVG("think-spark", "thinkSpark")}</div>
+    <div class="big"><span class="roll" id="roll" aria-live="polite"></span><span class="unit">calories</span></div>
     <div class="macros" id="macros"></div>
-    <p class="insight" id="insight" aria-live="polite">${sparkSVG("sm", "insightSpark")}<span id="insightTxt"></span></p>
+    <p class="insight" id="insight" aria-live="polite"><span id="insightTxt"></span></p>
     <div class="day"><div class="day-bar"><span id="dayBar" style="width:0"></span></div><span id="dayTxt"></span></div>
     ${custom}
     <div id="facts"></div>
@@ -927,7 +898,6 @@ function update(first) {
     p.textContent = `${cal > lastCal ? "+" : "−"}${Math.abs(cal - lastCal)}`;
     $(".big").append(p); setTimeout(() => p.remove(), 1200);
   }
-  if (!first && lastCal != null && cal !== lastCal) think();
   lastCal = cal;
   setInsight(insightFor(it, n));
   const pct = Math.round((cal / 2000) * 100);
@@ -978,15 +948,10 @@ $("#view").addEventListener("click", (ev) => {
   if (d.tab) return switchTab(+d.tab);
   if (d.pick) return go("pick", { pick: d.pick });
   if (d.item || d.group) {
-    let group = null, id = +d.item;
-    if (d.group) {
-      const ids = d.group.split(",").map(Number);
-      group = groupRows(ids.map((x) => ITEMS[x]))[0].group;
-      id = group.variants[0].it.id;
-    }
-    const it = ITEMS[id];
+    const groupIds = d.group ? d.group.split(",").map(Number) : null, group = groupOf(groupIds);
+    const it = ITEMS[group ? group.variants[0].it.id : +d.item];
     lastCal = null;
-    return go("item", { item: id, group, from: S.q ? "search" : S.view, servings: startServings(it), removed: new Set(), extras: new Set(), size: 16, milk: it.drink?.milk ?? "None", pumps: 0, whip: false });
+    return go("item", { group, groupIds, from: S.q ? "search" : S.view, ...itemOpts(it) });
   }
   const vk = Object.keys(d).find((k) => k.startsWith("v-") || /^v[A-Z]/.test(k));
   if (vk) { const dim = vk.replace(/^v-?/, "").toLowerCase(); return pickVariant(dim, d[vk]); }
@@ -1008,7 +973,11 @@ $("#q").addEventListener("input", (ev) => {
   // Clearing the search returns to wherever you were when you started typing.
   if (!was && S.q) S.base = S.view === "item" ? (S.eatery ? "menu" : "places") : S.view;
   S.view = S.base || "places";
-  if (was && S.q) { $("#view").innerHTML = searchHTML(); return; } // no slide on every keystroke
+  // Starting a search adds one history entry; later keystrokes just update it.
+  const depth = history.state?.depth ?? 0;
+  if (!was && S.q) history.pushState(navState(depth + 1), "", hashFor());
+  else history.replaceState(navState(depth), "", hashFor());
+  if (was && S.q) { $("#view").innerHTML = searchHTML(); return; }
   render(!S.q);
 });
 
@@ -1038,28 +1007,6 @@ $("#sheetRoot").addEventListener("click", (ev) => {
 function arrow() { return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>`; }
 
 $("#foot").innerHTML = `Unofficial. Food data from Cornell Dining's <a href="https://netnutrition.dining.cornell.edu/NetNutrition/1" target="_blank" rel="noopener">NetNutrition</a>, ${esc(DATA.scrapedAt)}. Tell staff about allergies; cross-contact can happen.`;
-/* ---------- Claude-style motion: words that write themselves in, a spark that works while numbers change ---------- */
-function streamWords(el, text, step = 38) {
-  const words = (text ?? el.textContent).trim().split(/\s+/);
-  el.innerHTML = words.map((w, i) => `<span class="w" style="--d:${i}">${esc(w)}</span>`).join(" ");
-  el.style.setProperty("--step", step + "ms");
-}
-// A twelve-ray starburst; rays have uneven lengths so it reads as hand-made, and each ray
-// carries its index so the "thinking" breath ripples around it.
-const RAYS = [10, 14, 11, 15, 10, 13, 11, 15, 10, 14, 12, 13];
-function sparkSVG(cls = "", id = "") {
-  const rays = RAYS.map((len, i) => `<g transform="rotate(${i * 30 + (i % 3) * 4} 20 20)"><line style="--r:${i}" x1="20" y1="16.5" x2="20" y2="${16.5 - len}" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></g>`).join("");
-  return `<svg class="spark ${cls}" ${id ? `id="${id}"` : ""} viewBox="-2 -2 44 44" aria-hidden="true">${rays}</svg>`;
-}
-function breathe(el) {
-  if (!el) return;
-  el.classList.remove("thinking"); void el.getBoundingClientRect(); el.classList.add("thinking");
-  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("thinking"), 1600);
-}
-function think() {
-  breathe($("#spark")); breathe($("#thinkSpark"));
-  const big = $(".big"); if (big) { big.classList.add("think"); clearTimeout(big._t); big._t = setTimeout(() => big.classList.remove("think"), 1100); }
-}
 // One or two plain-language notes about the item as it's currently customized.
 function insightFor(it, n) {
   const notes = [], pct = (v, dv) => Math.round((v / dv) * 100);
@@ -1082,8 +1029,7 @@ let lastInsight = "";
 function setInsight(text) {
   const el = $("#insightTxt"); if (!el || text === lastInsight && el.textContent) return;
   lastInsight = text;
-  streamWords(el, text, 45);
-  breathe($("#insightSpark"));
+  el.textContent = text;
 }
 
 /* ---------- Side rails ---------- */
@@ -1123,11 +1069,12 @@ $("#railL").addEventListener("click", (ev) => {
   const id = +b.dataset.item, it = ITEMS[id];
   lastCal = null;
   S.eatery = HOME[id].eatery.id;
-  go("item", { item: id, group: null, from: "menu", servings: startServings(it), removed: new Set(), extras: new Set(), size: 16, milk: it.drink?.milk ?? "None", pumps: 0, whip: false });
+  go("item", { group: null, groupIds: null, from: "menu", ...itemOpts(it) });
 });
-$("#sparkSlot").outerHTML = sparkSVG("", "spark");
 renderRails();
 setInterval(renderRails, 60000);
 
+fromHash();
 render();
+history.replaceState(navState(0), "", location.href);
 </script>
