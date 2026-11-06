@@ -1,0 +1,316 @@
+<meta charset="utf-8">
+<title>Cornell Nutrition Promo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap">
+<style>
+/* Layout: a 16:9 stage scaled to fit the screen, playing seven short scenes on a loop.
+   One committed look (the site's light paper and Cornell red), so no dark variant. */
+:root {
+  --paper: #f4f1f0; --card: #ffffff; --ink: #1b1515; --muted: #7a6d6c; --line: #e4dcdb;
+  --red: #b31b1b; --red-soft: #f6e3e1; --leaf: #1f7a3d; --frame: #161111;
+  --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--frame); color: var(--ink); font-family: var(--display); display: grid; place-items: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; box-sizing: border-box; }
+.player { width: 100%; max-width: 1280px; display: grid; gap: 12px; }
+.viewport { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 14px; overflow: hidden; background: var(--paper); box-shadow: 0 30px 80px -30px #000; }
+.stage { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0; }
+.controls { display: flex; align-items: center; gap: 14px; color: #cbbfbe; font-size: 14px; }
+.controls button { font: inherit; font-weight: 600; color: #fff; background: #2a2222; border: 0; border-radius: 99px; padding: 8px 16px; cursor: pointer; }
+.controls button:focus-visible { outline: 2px solid #ff6b5e; outline-offset: 2px; }
+.bar { flex: 1; height: 4px; border-radius: 4px; background: #2a2222; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: #ff6b5e; }
+
+/* Scenes */
+.scene { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; visibility: hidden; transition: opacity .5s var(--ease), visibility 0s .5s; }
+.scene.on { opacity: 1; visibility: visible; transition: opacity .5s var(--ease); }
+.topbar { position: absolute; inset: 0 0 auto; height: 8px; background: var(--red); }
+.kicker { font-size: 22px; font-weight: 600; color: var(--muted); letter-spacing: .01em; }
+.headline { font-size: 76px; line-height: .98; font-weight: 800; letter-spacing: -0.04em; margin: 0; text-wrap: balance; }
+.headline em { font-style: normal; color: var(--red); }
+.w { display: inline-block; opacity: 0; filter: blur(10px); transform: translateY(14px); }
+.on .w { animation: word .7s var(--ease) forwards; animation-delay: calc(var(--d) * 90ms + var(--base, 0ms)); }
+@keyframes word { to { opacity: 1; filter: none; transform: none; } }
+
+/* Spark */
+.spark { color: var(--red); overflow: visible; }
+.spark line { transform-box: view-box; transform-origin: 20px 20px; }
+.on .spark line { animation: breathe 1.1s cubic-bezier(.45, 0, .55, 1) both infinite; animation-delay: calc(var(--r) * 70ms); }
+@keyframes breathe { 50% { transform: scale(.55); opacity: .55; } }
+.on .spark.spin { animation: spin 14s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 1: the sideways label */
+.s1 { grid-template-columns: 460px 520px; gap: 70px; justify-content: center; }
+.label { width: 300px; padding: 14px 16px; background: #fff; border: 3px solid #111; font-family: Helvetica, Arial, sans-serif; color: #111; transform: rotate(-90deg) scale(.9); justify-self: center; }
+.on .label { animation: upright 1.1s var(--ease) 2.3s forwards; }
+@keyframes upright { to { transform: rotate(0) scale(1); } }
+.label h4 { margin: 0; font-size: 34px; font-weight: 900; letter-spacing: -0.02em; border-bottom: 1px solid #111; }
+.label .r { display: flex; justify-content: space-between; border-bottom: 1px solid #111; padding: 4px 0; font-size: 15px; }
+.label .r.cal { border-bottom: 6px solid #111; font-size: 26px; font-weight: 900; }
+.swap { position: relative; height: 170px; }
+.swap .headline { position: absolute; inset: 0 auto auto 0; transition: opacity .5s, filter .5s, transform .5s var(--ease); }
+.swap .b { opacity: 0; filter: blur(10px); transform: translateY(16px); }
+.s1.fixed .swap .a { opacity: 0; filter: blur(10px); transform: translateY(-16px); }
+.s1.fixed .swap .b { opacity: 1; filter: none; transform: none; }
+
+/* 2 and 7: wordmark */
+.mark { display: grid; justify-items: center; gap: 22px; text-align: center; }
+.mark .spark { width: 110px; height: 110px; opacity: 0; transform: scale(.4); }
+.on .mark .spark { animation: pop .9s var(--ease) forwards, spin 14s linear infinite .9s; }
+@keyframes pop { to { opacity: 1; transform: none; } }
+.mark .headline { font-size: 104px; }
+.mark .tag { font-size: 30px; color: var(--muted); max-width: 30ch; line-height: 1.3; --base: 900ms; }
+.pill { display: inline-block; padding: 8px 18px; border-radius: 99px; border: 2px solid var(--line); font-size: 20px; font-weight: 600; color: var(--muted); opacity: 0; }
+.on .pill { animation: pop .6s var(--ease) 1.8s forwards; }
+
+/* 3: logos */
+.s3 { grid-template-rows: auto auto; align-content: center; gap: 46px; }
+.logos { display: grid; grid-template-columns: repeat(4, 150px); gap: 22px; }
+.logos span { width: 150px; height: 112px; border-radius: 22px; background: var(--card); box-shadow: 0 0 0 1.5px var(--line), 0 18px 30px -22px rgba(0,0,0,.35); display: grid; place-items: center; opacity: 0; transform: translateY(26px) scale(.9); }
+.logos img { max-width: 76%; max-height: 74%; object-fit: contain; }
+.on .logos span { animation: pop .7s var(--ease) forwards; animation-delay: calc(var(--i) * 110ms + 200ms); }
+.counts { display: flex; gap: 70px; justify-content: center; }
+.counts div { text-align: center; }
+.counts b { display: block; font-size: 84px; font-weight: 800; letter-spacing: -0.04em; color: var(--red); line-height: 1; font-variant-numeric: tabular-nums; }
+.counts small { font-size: 22px; color: var(--muted); font-weight: 600; }
+
+/* 4 and 5: item screens */
+.item { width: 900px; display: grid; gap: 18px; }
+.item h3 { margin: 0; font-size: 70px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+.item .lede { margin: 0; font-size: 26px; color: var(--muted); }
+.big { display: flex; align-items: baseline; gap: 16px; }
+.big b { font-size: 170px; font-weight: 800; letter-spacing: -0.06em; color: var(--red); line-height: .9; font-variant-numeric: tabular-nums; }
+.big span { font-size: 28px; color: var(--muted); }
+.seg { position: relative; display: inline-flex; padding: 6px; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1.5px var(--line); justify-self: start; }
+.seg i { position: relative; z-index: 1; font-style: normal; font-size: 26px; font-weight: 600; padding: 12px 28px; transition: color .3s; }
+.seg i.sel { color: #fff; }
+.seg .thumb { position: absolute; top: 6px; bottom: 6px; border-radius: 99px; background: var(--red); transition: left .55s var(--ease), width .55s var(--ease); }
+.caption { position: absolute; right: 70px; bottom: 60px; font-size: 26px; font-weight: 700; color: var(--ink); }
+.caption em { font-style: normal; color: var(--red); }
+.chips { display: flex; gap: 14px; flex-wrap: wrap; }
+.chip { font-size: 26px; font-weight: 600; padding: 12px 24px; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1.5px var(--line); position: relative; transition: background .3s, color .3s, box-shadow .3s, opacity .3s; }
+.chip small { color: var(--muted); font-weight: 500; margin-left: 8px; }
+.chip.off { opacity: .45; }
+.chip.off::after { content: ""; position: absolute; left: 18px; right: 18px; top: 50%; height: 3px; background: var(--red); border-radius: 3px; transform-origin: left; animation: strike .45s var(--ease) both; }
+@keyframes strike { from { transform: scaleX(0); } }
+.chip.sel { background: var(--red); color: #fff; box-shadow: none; }
+.cursor { position: absolute; width: 34px; height: 34px; border-radius: 50%; background: rgba(179, 27, 27, .18); border: 3px solid var(--red); left: 0; top: 0; opacity: 0; transition: left .7s var(--ease), top .7s var(--ease), opacity .3s, transform .15s; pointer-events: none; z-index: 5; }
+.cursor.tap { transform: scale(.7); }
+
+/* 6: where should I go */
+.ask { width: 960px; padding: 40px 44px; border-radius: 30px; background: var(--card); box-shadow: 0 0 0 1.5px var(--line), 0 40px 70px -40px rgba(0,0,0,.35); display: grid; gap: 22px; }
+.ask p { margin: 0; display: flex; align-items: center; gap: 14px; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
+.ask p .spark { width: 30px; height: 30px; }
+.step2 { display: grid; gap: 18px; opacity: 0; transform: translateY(16px); transition: opacity .5s, transform .5s var(--ease); }
+.step2.show { opacity: 1; transform: none; }
+.result { display: grid; grid-template-columns: 76px 1fr auto; gap: 20px; align-items: center; padding: 18px 22px; border-radius: 22px; box-shadow: 0 0 0 2.5px var(--red); opacity: 0; transform: translateY(18px); transition: opacity .5s, transform .6s var(--ease); }
+.result.show { opacity: 1; transform: none; }
+.result .lg { width: 76px; height: 76px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1.5px var(--line); display: grid; place-items: center; }
+.result .lg img { max-width: 84%; max-height: 84%; }
+.result b { display: block; font-size: 32px; letter-spacing: -0.02em; }
+.result small { font-size: 21px; color: var(--muted); }
+.result small em { font-style: normal; color: var(--leaf); font-weight: 700; }
+.result .min { text-align: right; font-size: 54px; font-weight: 800; letter-spacing: -0.04em; line-height: .9; }
+.result .min small { display: block; font-size: 18px; letter-spacing: 0; margin-top: 4px; }
+
+.end .headline { font-size: 112px; }
+.end .tag { --base: 600ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .on .spark line, .on .mark .spark { animation-duration: 2s; }
+}
+</style>
+
+<div class="player">
+  <div class="viewport" id="viewport" role="img" aria-label="Promo for Cornell Nutrition: nutrition for every Cornell café, with scoop sizes, ingredient swaps and a guide to the nearest open café.">
+    <div class="stage" id="stage">
+      <div class="topbar"></div>
+
+      <section class="scene s1" data-at="0" data-to="4200">
+        <div class="label" aria-hidden="true">
+          <h4>Nutrition Facts</h4>
+          <div class="r"><span>Serving size</span><span>1 sandwich</span></div>
+          <div class="r cal"><span>Calories</span><span>750</span></div>
+          <div class="r"><span>Total Fat</span><span>38g</span></div>
+          <div class="r"><span>Sodium</span><span>1450mg</span></div>
+          <div class="r"><span>Protein</span><span>37g</span></div>
+        </div>
+        <div>
+          <p class="kicker">Cornell's dining nutrition site</p>
+          <div class="swap">
+            <h2 class="headline a">Ever read a label <em>sideways?</em></h2>
+            <h2 class="headline b">We turned it <em>right side up.</em></h2>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene s2" data-at="4200" data-to="8000">
+        <div class="mark">
+          %%SPARK%%
+          <h2 class="headline words">Cornell <em>Nutrition</em></h2>
+          <p class="tag words">Every café on campus. Every item. Your way.</p>
+        </div>
+      </section>
+
+      <section class="scene s3" data-at="8000" data-to="12600">
+        <div class="logos">%%LOGOS%%</div>
+        <div class="counts">
+          <div><b data-count="12">0</b><small>cafés</small></div>
+          <div><b data-count="647">0</b><small>items</small></div>
+          <div><b data-count="22">0</b><small>Dairy flavors</small></div>
+        </div>
+      </section>
+
+      <section class="scene s4" data-at="12600" data-to="18200">
+        <div class="item">
+          <h3>Big Red Bear Tracks</h3>
+          <p class="lede">Vanilla ice cream with brownie pieces and a caramel swirl.</p>
+          <div class="big"><b id="bearCal">225</b><span>calories</span></div>
+          <div class="seg" id="scoops"><i>Kiddie</i><i>Small</i><i>Medium</i><i>Large</i><span class="thumb"></span></div>
+        </div>
+        <p class="caption">Pick your <em>scoop.</em> Watch it add up.</p>
+      </section>
+
+      <section class="scene s5" data-at="18200" data-to="23400">
+        <div class="item">
+          <h3>Chicken Quesadilla</h3>
+          <p class="lede">Made with chicken, cheese, tortilla and guacamole · Mattin's Café</p>
+          <div class="big"><b id="quesCal">850</b><span>calories</span></div>
+          <div class="chips" id="parts"><span class="chip">Chicken<small>140</small></span><span class="chip" id="cheese">Cheese<small>110</small></span><span class="chip">Tortilla<small>300</small></span><span class="chip">Guacamole<small>110</small></span></div>
+        </div>
+        <p class="caption">Hold the cheese. <em>The math follows.</em></p>
+      </section>
+
+      <section class="scene s6" data-at="23400" data-to="29600">
+        <div class="ask">
+          <p>%%SPARK_SM%%What are you in the mood for?</p>
+          <div class="chips"><span class="chip">Coffee</span><span class="chip">Breakfast</span><span class="chip" id="wantProtein">High protein</span><span class="chip">Something sweet</span><span class="chip">Vegan</span></div>
+          <div class="step2" id="step2">
+            <p>Where are you right now?</p>
+            <div class="chips"><span class="chip">North Campus</span><span class="chip">Arts Quad</span><span class="chip" id="atEng">Engineering Quad</span><span class="chip">Collegetown</span></div>
+          </div>
+          <div class="result" id="result">
+            <span class="lg"><img src="%%LOGO_5%%" alt=""></span>
+            <span><b>Mattin's Café</b><small><em>Open until 10pm</em> · Try Chicken Quesadilla, 59g protein</small></span>
+            <span class="min">1<small>min walk</small></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene end" data-at="29600" data-to="34500">
+        <div class="mark">
+          %%SPARK%%
+          <h2 class="headline words">Cornell <em>Nutrition</em></h2>
+          <p class="tag words">Free, unofficial, and updated every morning.</p>
+          <span class="pill">Every café · every item · your way</span>
+        </div>
+      </section>
+
+      <div class="cursor" id="cursor"></div>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="play" type="button">Pause</button>
+    <button id="replay" type="button">Replay</button>
+    <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const stage = $("#stage"), vp = $("#viewport");
+const fit = () => { stage.style.transform = `scale(${vp.clientWidth / 1280})`; };
+new ResizeObserver(fit).observe(vp); fit();
+
+// Split text into words that blur in one after another.
+document.querySelectorAll(".words").forEach((el) => {
+  let i = 0;
+  const walk = (node) => [...node.childNodes].forEach((c) => {
+    if (c.nodeType === 3) {
+      const f = document.createDocumentFragment();
+      c.textContent.split(/(\s+)/).forEach((t) => {
+        if (!t) return;
+        if (/^\s+$/.test(t)) return f.append(t);
+        const s = document.createElement("span"); s.className = "w"; s.style.setProperty("--d", i++); s.textContent = t; f.append(s);
+      });
+      c.replaceWith(f);
+    } else walk(c);
+  });
+  walk(el);
+});
+
+function tween(el, from, to, ms) {
+  const t0 = performance.now();
+  const step = (t) => {
+    const p = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (to - from) * e);
+    if (p < 1 && running) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function moveThumb(seg, i) {
+  const b = seg.querySelectorAll("i"), t = seg.querySelector(".thumb");
+  b.forEach((x, k) => x.classList.toggle("sel", k === i));
+  t.style.left = b[i].offsetLeft + "px"; t.style.width = b[i].offsetWidth + "px";
+}
+// Moves a pretend fingertip to an element on the stage, then taps it.
+function tapAt(el, then) {
+  const c = $("#cursor"), r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(), k = vp.clientWidth / 1280;
+  c.style.opacity = 1;
+  c.style.left = ((r.left - s.left) / k + (r.width / k) / 2 - 17) + "px";
+  c.style.top = ((r.top - s.top) / k + (r.height / k) / 2 - 17) + "px";
+  later(750, () => { c.classList.add("tap"); then(); later(160, () => c.classList.remove("tap")); later(700, () => (c.style.opacity = 0)); });
+}
+
+// Things each scene does once it's on screen (ms after the scene starts).
+const BEATS = {
+  s1: [[2600, () => $(".s1").classList.add("fixed")]],
+  s3: [[700, () => document.querySelectorAll("[data-count]").forEach((b) => tween(b, 0, +b.dataset.count, 1500))]],
+  s4: [[0, () => { moveThumb($("#scoops"), 0); $("#bearCal").textContent = 225; }],
+       [1300, () => { moveThumb($("#scoops"), 1); tween($("#bearCal"), 225, 450, 700); }],
+       [2500, () => { moveThumb($("#scoops"), 2); tween($("#bearCal"), 450, 675, 700); }],
+       [3700, () => { moveThumb($("#scoops"), 3); tween($("#bearCal"), 675, 900, 700); }]],
+  s5: [[0, () => { $("#cheese").classList.remove("off"); $("#quesCal").textContent = 850; }],
+       [900, () => tapAt($("#cheese"), () => { $("#cheese").classList.add("off"); tween($("#quesCal"), 850, 740, 800); })],
+       [3600, () => { $("#cursor").style.opacity = 0; }]],
+  s6: [[0, () => { $("#wantProtein").classList.remove("sel"); $("#atEng").classList.remove("sel"); $("#step2").classList.remove("show"); $("#result").classList.remove("show"); }],
+       [700, () => tapAt($("#wantProtein"), () => { $("#wantProtein").classList.add("sel"); later(350, () => $("#step2").classList.add("show")); })],
+       [2400, () => tapAt($("#atEng"), () => { $("#atEng").classList.add("sel"); later(400, () => $("#result").classList.add("show")); })],
+       [5200, () => { $("#cursor").style.opacity = 0; }]],
+};
+
+const scenes = [...document.querySelectorAll(".scene")];
+const TOTAL = 34500;
+let timers = [], running = true, t0 = 0, offset = 0, raf;
+const later = (ms, fn) => timers.push(setTimeout(fn, ms));
+function clear() { timers.forEach(clearTimeout); timers = []; }
+
+function playFrom(at) {
+  clear(); running = true; offset = at; t0 = performance.now();
+  scenes.forEach((s) => {
+    const a = +s.dataset.at, b = +s.dataset.to, key = [...s.classList].find((c) => BEATS[c]);
+    s.classList.remove("on", "fixed");
+    if (b <= at) return;
+    later(Math.max(0, a - at), () => {
+      scenes.forEach((x) => x !== s && x.classList.remove("on"));
+      $("#cursor").style.opacity = 0;
+      s.classList.add("on");
+      (BEATS[key] || []).forEach(([ms, fn]) => later(ms, fn));
+    });
+  });
+  later(TOTAL - at, () => playFrom(0));
+  cancelAnimationFrame(raf);
+  const tick = () => { if (!running) return; const p = (offset + performance.now() - t0) / TOTAL; $("#bar").style.width = Math.min(100, p * 100) + "%"; raf = requestAnimationFrame(tick); };
+  tick();
+}
+$("#replay").addEventListener("click", () => { $("#play").textContent = "Pause"; playFrom(0); });
+$("#play").addEventListener("click", () => {
+  if (running) { running = false; offset += performance.now() - t0; clear(); stage.style.animationPlayState = "paused"; document.querySelectorAll(".stage *").forEach((e) => (e.style.animationPlayState = "paused")); $("#play").textContent = "Play"; }
+  else { document.querySelectorAll(".stage *").forEach((e) => (e.style.animationPlayState = "")); $("#play").textContent = "Pause"; playFrom(0); }
+});
+playFrom(0);
+</script>
