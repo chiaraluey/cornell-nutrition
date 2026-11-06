@@ -1,0 +1,1080 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cornell Nutrition</title>
+<meta name="description" content="Search every Cornell Dining menu, see nutrition and allergens, and find what's open now.">
+<meta name="theme-color" content="#b31b1b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23b31b1b'/%3E%3Ctext x='16' y='22.5' font-family='Arial,sans-serif' font-size='17' font-weight='700' fill='white' text-anchor='middle'%3ECN%3C/text%3E%3C/svg%3E">
+<style>
+/* Layout: one narrow column, one step at a time: places, then a menu, then one item. */
+:root {
+  --bg: #f3f2f2;
+  --card: #ffffff;
+  --ink: #1a1414;
+  --muted: #6b6262;
+  --line: #e2dddd;
+  --accent: #b31b1b;
+  --on-accent: #ffffff;
+  --leaf: #12805c;
+  --warn: #a16207;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121010; --card: #1d1a1a; --ink: #f2eded; --muted: #a39999; --line: #302a2a;
+    --accent: #ff6b5e; --on-accent: #1a0a0a; --leaf: #4fd1a1; --warn: #f2b84b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121010; --card: #1d1a1a; --ink: #f2eded; --muted: #a39999; --line: #302a2a;
+  --accent: #ff6b5e; --on-accent: #1a0a0a; --leaf: #4fd1a1; --warn: #f2b84b; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+.topbar { height: 6px; background: var(--accent); }
+/* Wide screens: live "open now" + dining halls on the left, food events on the right. */
+.shell { display: grid; grid-template-columns: minmax(0, 1fr); }
+.rail { display: none; }
+@media (min-width: 1180px) {
+  .shell { grid-template-columns: minmax(240px, 1fr) minmax(0, 680px) minmax(260px, 1fr); gap: 36px; padding-inline: 28px; }
+  .rail { display: block; position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; scrollbar-width: none; padding-block: 30px 40px; width: 100%; max-width: 300px; }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail-l { justify-self: end; }
+  .rail-r { justify-self: start; }
+}
+.rail h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; }
+.rail h4 + .rnote { margin-top: -6px; }
+.rail section + section { margin-top: 30px; }
+.rnote { font-size: 12px; color: var(--muted); margin: 0 0 10px; line-height: 1.4; }
+.openrow { display: flex; align-items: center; gap: 10px; width: calc(100% + 20px); text-align: left; padding: 8px 10px; margin: 0 -10px; border-radius: 10px; font-size: 14.5px; transition: background .2s; }
+.openrow:hover { background: var(--card); }
+.openrow .dot { width: 8px; height: 8px; border-radius: 99px; background: #9a9090; flex: none; }
+.openrow .dot.on { background: #16a34a; }
+.openrow b { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.openrow small { color: var(--muted); white-space: nowrap; font-size: 12.5px; }
+.hall { padding: 12px 0; border-top: 1px solid var(--line); }
+.hall:first-of-type { border-top: 0; padding-top: 2px; }
+.hall b { display: block; font-size: 14.5px; font-weight: 700; }
+.hall .when { font-size: 12.5px; color: var(--muted); }
+.hall .when .now { color: #16a34a; font-weight: 600; }
+.hall ul { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 2px; }
+.hall li { font-size: 13.5px; line-height: 1.35; padding-left: 12px; position: relative; }
+.hall li::before { content: ""; position: absolute; left: 0; top: .55em; width: 5px; height: 5px; border-radius: 99px; background: var(--accent); }
+.ev { display: block; text-decoration: none; color: inherit; border-radius: 12px; overflow: hidden; background: var(--card); box-shadow: 0 0 0 1px var(--line); transition: transform .3s var(--ease), box-shadow .3s; }
+.ev + .ev { margin-top: 12px; }
+.ev:hover { box-shadow: 0 0 0 1px var(--muted); }
+.ev .pic { position: relative; aspect-ratio: 16 / 9; max-width: 100%; overflow: hidden; background: var(--line); }
+.ev .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ev .date { position: absolute; left: 10px; top: 10px; background: #fff; color: #1a1414; border-radius: 10px; padding: 4px 8px 5px; text-align: center; line-height: 1; box-shadow: 0 2px 8px rgb(0 0 0 / 18%); }
+.ev .date small { display: block; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: #b31b1b; }
+.ev .date b { font-size: 20px; font-weight: 800; }
+.ev .txt { padding: 10px 12px 12px; }
+.ev .txt b { display: block; font-size: 14.5px; font-weight: 700; line-height: 1.25; }
+.ev .txt small { display: block; margin-top: 3px; font-size: 12.5px; color: var(--muted); }
+.ev-strip { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 34px; padding: 2px 16px 6px; scroll-snap-type: x mandatory; }
+.ev-strip::-webkit-scrollbar { display: none; }
+.ev-strip .ev { flex: 0 0 240px; scroll-snap-align: start; }
+.ev-strip .ev + .ev { margin-top: 0; }
+@media (min-width: 1180px) { .ev-strip, .ev-label { display: none; } }
+.app { min-width: 0; width: 100%; max-width: 680px; margin: 0 auto; padding-block: 28px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.mark { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; color: inherit; text-decoration: none; }
+.mark span { color: var(--accent); }
+.tag { font-size: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 3px 9px; }
+.search { position: relative; display: block; margin-bottom: 28px; }
+.search input { width: 100%; border: 0; border-radius: 12px; background: var(--card); padding: 16px 18px 16px 48px; font-size: 17px; box-shadow: 0 0 0 1px var(--line); transition: box-shadow .2s; }
+.search input:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+.search svg { position: absolute; left: 18px; top: 50%; translate: 0 -50%; color: var(--muted); }
+
+
+.eyebrow { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; margin: 0 0 6px; }
+h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.035em; font-weight: 800; margin: 0; text-wrap: balance; }
+
+/* Places */
+.places { list-style: none; margin: 8px 0 0; padding: 0; }
+.place { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; text-align: left; padding: 14px 2px; border-bottom: 1px solid var(--line); }
+.place b { font-size: clamp(22px, 4.6vw, 30px); font-weight: 700; letter-spacing: -0.025em; transition: transform .25s var(--ease), color .2s; }
+.place small { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.place:hover b { color: var(--accent); }
+
+.place .what { display: block; font-size: 13.5px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.place > span { min-width: 0; }
+.picks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 34px; }
+.pick { text-align: left; background: var(--card); border-radius: 12px; padding: 14px 14px 12px; box-shadow: 0 0 0 1px var(--line); transition: transform .25s var(--ease), box-shadow .2s; }
+.pick:hover { box-shadow: 0 0 0 1px var(--muted); }
+.pick b { display: block; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.pick small { color: var(--muted); font-size: 12.5px; }
+.pick i { display: block; font-style: normal; font-size: 22px; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 10px; letter-spacing: -0.02em; }
+@media (max-width: 560px) { .picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* "Where should I go?" */
+.ask { margin: 0 0 34px; padding: 20px 20px 18px; border-radius: 12px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.ask-q { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; font-size: 19px; font-weight: 700; letter-spacing: -0.015em; }
+.ask-step { margin-top: 20px; }
+.ask .chip { font-size: 14.5px; padding: 8px 14px; }
+.chip.loc { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); }
+.chip.loc.sel { color: var(--on-accent); }
+.chip.loc[disabled] { opacity: .5; }
+.ask-out:not(:empty) { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.ask-sum { margin: 0 0 14px; font-size: 15.5px; line-height: 1.45; }
+.sugg { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sugg li { display: grid; border-radius: 12px; box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+.sugg li:first-child { box-shadow: 0 0 0 1.5px var(--accent); }
+.sg { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; text-align: left; }
+.sg .mark { width: 44px; height: 44px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+.sg .mark img { width: 86%; height: 86%; object-fit: contain; }
+.sg .mark.mono { background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 15px; box-shadow: none; }
+.sg b { display: block; font-size: 17px; font-weight: 700; letter-spacing: -0.015em; transition: color .2s; }
+.sg small { color: var(--muted); font-size: 13px; }
+.sg small .open { color: var(--leaf); font-weight: 600; }
+.sg:hover b { color: var(--accent); }
+.sg-min { text-align: right; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.sg-min small { display: block; font-size: 11.5px; font-weight: 500; letter-spacing: 0; margin-top: 3px; }
+.sg-try { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; text-align: left; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--accent) 5%, var(--card)); font-size: 14.5px; transition: background .2s; }
+.sg-try:hover { background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+.sg-try > span:first-child { color: var(--muted); }
+.sg-try b { font-weight: 600; min-width: 0; }
+.sg-try .kc { margin-left: auto; white-space: nowrap; color: var(--muted); }
+.fav { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11.5px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); white-space: nowrap; }
+.fav-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 13.5px; color: var(--muted); }
+.fav-line a { color: inherit; }
+@media (max-width: 560px) { .ask { padding: 16px 14px; } .ask-q { font-size: 17px; } .sg-try { flex-wrap: wrap; row-gap: 2px; } .sg-try .kc { flex-basis: 100%; margin-left: 0; font-size: 13px; } .sg { gap: 10px; padding: 12px; } }
+
+/* Logo tiles: real logos sit on white (they're drawn for white); the rest get a red monogram. */
+.tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.tile { display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); transition: transform .3s var(--ease), box-shadow .3s; }
+.tile:hover { box-shadow: 0 0 0 1px var(--muted); }
+.tile .art { aspect-ratio: 4 / 3; max-width: 100%; display: grid; place-items: center; overflow: hidden; }
+.tile .txt { padding: 12px 14px 14px; display: grid; gap: 2px; border-top: 1px solid var(--line); flex: 1; align-content: start; }
+.tile b { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.tile small { color: var(--muted); font-size: 12.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.logo { background: #ffffff; }
+.logo img { width: 78%; height: 78%; object-fit: contain; }
+.mono { background: var(--accent); color: #fff; }
+.mono > span:not(.status) { font-size: clamp(38px, 9vw, 56px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.mono.alt { background: var(--ink); color: var(--bg); }
+.head-logo { width: 64px; height: 64px; flex: none; border-radius: 14px; overflow: hidden; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); }
+.head-logo .mono-s { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+.title-row { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+.tile .art { position: relative; }
+.status { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 99px; background: rgb(255 255 255 / 92%); color: #1a1414; box-shadow: 0 1px 3px rgb(0 0 0 / 12%); }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 99px; background: #9a9090; }
+.status.open::before { background: #16a34a; }
+.lines { list-style: none; margin: 0; padding: 0; }
+.meta-line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 12px; font-size: 14px; color: var(--muted); }
+.meta-line .open { color: #16a34a; font-weight: 600; }
+.verify { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; margin-top: 18px; padding: 14px 16px; border-radius: 14px; background: var(--card); box-shadow: 0 0 0 1px var(--line); font-size: 14px; line-height: 1.5; }
+.verify .ic { width: 26px; height: 26px; border-radius: 99px; display: grid; place-items: center; background: #16a34a; color: #fff; }
+.verify.caution .ic { background: var(--warn); }
+.verify b { font-weight: 600; }
+.verify p { margin: 0; }
+.verify p + p { margin-top: 6px; color: var(--muted); }
+.src-line { margin-top: 10px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.src-line svg { color: #16a34a; flex: none; }
+
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 4; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 22px -4px 0; padding: 10px 4px 0; background: var(--bg); border-bottom: 1px solid var(--line); }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+.tab { flex: none; padding: 8px 12px 12px; font-size: 15px; font-weight: 600; color: var(--muted); white-space: nowrap; transition: color .2s; }
+.tab small { font-weight: 500; font-size: 12px; margin-left: 5px; opacity: .7; }
+.tab[aria-selected="true"] { color: var(--ink); }
+.ink { position: absolute; left: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent); transition: transform .35s var(--ease), width .35s var(--ease); }
+.tab-body > .note { margin: 14px 0 0; }
+.vline summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; color: #16a34a; font-weight: 600; }
+.vline summary::-webkit-details-marker { display: none; }
+.vline p { flex-basis: 100%; margin: 8px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--card); box-shadow: 0 0 0 1px var(--line); color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+.vline[open] { flex-basis: 100%; }
+
+.seg2 { position: relative; display: inline-flex; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.seg2 button { position: relative; z-index: 1; flex: none; padding: 8px 16px; border-radius: 99px; font-size: 15px; font-weight: 500; white-space: nowrap; transition: color .25s; }
+.seg2 button.sel { color: var(--on-accent); }
+.seg2 .thumb { position: absolute; z-index: 0; left: 0; top: 4px; bottom: 4px; border-radius: 99px; background: var(--accent); transition: transform .4s var(--ease), width .4s var(--ease); }
+.item .kc i { font-style: normal; color: var(--muted); font-weight: 400; margin: 0 1px; }
+.item { transition: background .2s; }
+
+.insight { display: flex; gap: 9px; align-items: flex-start; margin: 16px 0 0; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 7%, var(--card)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, var(--line)); font-size: 15px; line-height: 1.45; }
+.lean { display: block; width: calc(100% + 20px); text-align: left; padding: 10px; margin: 0 -10px; border-radius: 12px; transition: background .2s; }
+.lean:hover { background: var(--card); }
+.lean b { display: block; font-size: 14px; font-weight: 600; line-height: 1.3; }
+.lean small { display: block; font-size: 12px; color: var(--muted); }
+.lean-bar { display: block; height: 4px; border-radius: 99px; background: var(--line); margin: 7px 0 4px; overflow: hidden; }
+.lean-bar span { display: block; height: 100%; width: var(--w); border-radius: inherit; background: var(--accent); }
+.lean-n { font-size: 12.5px; color: var(--muted); }
+.lean-n b { display: inline; color: var(--ink); font-size: 12.5px; }
+
+/* Menu */
+.back-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 15px; font-weight: 500; margin-bottom: 14px; padding: 4px 0; }
+.back-btn:hover { color: var(--ink); }
+.back-btn svg { transition: transform .2s var(--ease); }
+.menu-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 8px; }
+.filter-btn { flex: none; border-radius: 99px; padding: 8px 14px; font-size: 14px; font-weight: 600; box-shadow: 0 0 0 1px var(--line); background: var(--card); }
+.filter-btn.on { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+.note { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+.course { margin-top: 30px; }
+.course h2 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 4px; letter-spacing: 0.02em; }
+.item { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; text-align: left; padding: 13px 2px; border-bottom: 1px solid var(--line); }
+.item .nm { display: inline-block; font-size: 17px; font-weight: 500; transition: transform .25s var(--ease); }
+.item-txt { min-width: 0; }
+.item .what { display: block; font-size: 13.5px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lede { margin: 12px 0 0; font-size: 17px; line-height: 1.45; color: var(--muted); max-width: 52ch; text-wrap: pretty; }
+.item .sub { display: block; font-size: 13px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+.item .sub .veg { color: var(--leaf); }
+.item { position: relative; }
+.item .bar { position: absolute; left: 2px; bottom: -1px; height: 2px; width: var(--w); background: var(--accent); opacity: .55; }
+.item:hover .bar { opacity: 1; }
+.item .kc { font-weight: 700; font-size: 19px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.item .kc small { font-weight: 400; font-size: 12px; color: var(--muted); margin-left: 3px; }
+.empty { color: var(--muted); padding: 40px 0; text-align: center; }
+
+/* Item */
+.big { display: flex; align-items: flex-end; gap: 10px; margin: 26px 0 6px; position: relative; }
+.roll { display: inline-flex; font-size: clamp(76px, 18vw, 120px); font-weight: 800; letter-spacing: -0.02em; line-height: 1; height: 1em; overflow: hidden; font-variant-numeric: tabular-nums; }
+.roll .col { display: inline-block; height: 1em; overflow: hidden; }
+.roll .strip { display: flex; flex-direction: column; transition: transform .6s var(--ease); }
+.roll .strip span { height: 1em; }
+.roll { color: var(--accent); }
+.big .unit { font-size: 18px; color: var(--muted); padding-bottom: .5em; }
+.pop { position: absolute; left: 0; top: -6px; font-weight: 700; font-size: 18px; color: var(--ink); pointer-events: none; animation: float 1.1s var(--ease) forwards; }
+@keyframes float { from { opacity: 0; transform: translateY(14px); } 20% { opacity: 1; } to { opacity: 0; transform: translateY(-18px); } }
+.macros { display: flex; gap: 22px; font-size: 15px; color: var(--muted); flex-wrap: wrap; }
+.macros b { color: var(--ink); font-weight: 700; font-size: 18px; margin-right: 3px; font-variant-numeric: tabular-nums; }
+
+.day { display: flex; align-items: center; gap: 12px; margin-top: 14px; font-size: 13.5px; color: var(--muted); }
+.day-bar { flex: 0 0 120px; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.day-bar span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .6s var(--ease); }
+.mini { position: fixed; z-index: 15; left: 0; right: 0; top: 0; padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); transform: translateY(-110%); transition: transform .3s var(--ease); }
+.mini.show { transform: none; }
+.mini div { max-width: 680px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.mini span { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.mini b { color: var(--accent); font-size: 20px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mini b small { color: var(--muted); font-size: 12px; font-weight: 500; margin-left: 3px; }
+.block { margin-top: 30px; }
+.block h3 { font-size: 15px; font-weight: 700; margin: 0 0 10px; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.block h3 small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border-radius: 99px; padding: 9px 15px; font-size: 15px; font-weight: 500; background: var(--card); box-shadow: 0 0 0 1px var(--line); transition: background .2s, color .2s, box-shadow .2s, transform .15s var(--ease); }
+.chip:active { transform: scale(.95); }
+.chip small { color: var(--muted); font-weight: 400; margin-left: 4px; font-size: 13px; }
+.chip.sel { background: var(--accent); color: var(--on-accent); box-shadow: none; }
+.chip.sel small { color: inherit; opacity: .7; }
+/* "Leave something off" chips: on = included. Off = struck through and faded. */
+.chip.part { position: relative; }
+.chip.part::after { content: ""; position: absolute; left: 14px; right: 14px; top: 50%; height: 2px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .3s var(--ease); }
+.chip.part small { margin-left: 6px; }
+.chip.part.off { color: var(--muted); background: transparent; box-shadow: 0 0 0 1px var(--line); }
+.chip.part.off::after { transform: scaleX(1); }
+.chip.add.sel { background: var(--ink); color: var(--bg); }
+.stepper { display: inline-flex; align-items: center; gap: 4px; }
+.stepper button { width: 40px; height: 40px; border-radius: 99px; background: var(--card); box-shadow: 0 0 0 1px var(--line); font-size: 20px; }
+.stepper output { min-width: 84px; text-align: center; font-weight: 600; }
+.row-opt { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.est { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+
+/* Nutrition Facts, upright and in the familiar format */
+.facts { background: var(--card); color: var(--ink); border: 2px solid var(--ink); padding: 10px 12px 12px; margin-top: 34px; font-variant-numeric: tabular-nums; }
+.facts h4 { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin: 0; line-height: 1.05; }
+.facts .serv { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; font-size: 15px; padding-bottom: 5px; border-bottom: 10px solid var(--ink); }
+.facts .cal { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 5px solid var(--ink); padding: 2px 0; font-weight: 800; }
+.facts .cal span { font-size: 26px; } .facts .cal b { font-size: 38px; line-height: 1; }
+.facts .dvh { text-align: right; font-size: 12px; font-weight: 700; border-bottom: 1px solid var(--ink); padding: 3px 0; }
+.facts .r { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; border-bottom: 1px solid var(--ink); padding: 4px 0; }
+.facts .r.in { padding-left: 18px; }
+.facts .r.in2 { padding-left: 36px; }
+.facts .r.end { border-bottom: 10px solid var(--ink); }
+.facts .r b { font-weight: 800; }
+.facts .r .chg { color: var(--accent); font-weight: 700; }
+.facts .foot { font-size: 11.5px; padding-top: 6px; color: var(--muted); }
+.contains { margin-top: 18px; font-size: 15px; }
+.contains b { color: var(--warn); font-weight: 600; }
+details.ingr { margin-top: 12px; font-size: 15px; }
+details.ingr summary { cursor: pointer; color: var(--muted); font-weight: 500; }
+details.ingr p { color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+/* Filters sheet */
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgb(20 8 8 / 45%); animation: fade .25s both; }
+@keyframes fade { from { opacity: 0; } }
+.sheet { position: fixed; z-index: 21; left: 50%; bottom: 0; width: min(680px, 100%); translate: -50% 0; background: var(--bg); border-radius: 12px 22px 0 0; padding: 22px max(20px, env(safe-area-inset-left, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)); max-height: 86vh; overflow: auto; animation: up .38s var(--ease) both; }
+@keyframes up { from { transform: translateY(100%); } }
+.sheet h3 { font-size: 15px; margin: 22px 0 10px; }
+.sheet h3:first-of-type { margin-top: 4px; }
+.sheet .done { margin-top: 26px; width: 100%; border-radius: 14px; padding: 14px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.sheet .chip.avoid.sel { background: var(--warn); color: var(--card); }
+
+footer { margin-top: 56px; color: var(--muted); font-size: 13px; }
+footer a { color: inherit; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+
+<div class="topbar"></div>
+<div class="shell">
+<aside class="rail rail-l" id="railL" aria-label="Open now and dining halls"></aside>
+<div class="app">
+  <div class="top">
+    <a class="mark" href="./">Cornell <span>Nutrition</span></a>
+    <span class="tag">Unofficial</span>
+  </div>
+  <label class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Search any food on campus" autocomplete="off" aria-label="Search any food on campus">
+  </label>
+  <main id="view"></main>
+  <footer id="foot"></footer>
+</div>
+<aside class="rail rail-r" id="railR" aria-label="Food events"></aside>
+</div>
+<div id="sheetRoot"></div>
+<div class="mini" id="mini" aria-hidden="true"><div><span id="miniName"></span><b id="miniCal"></b></div></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const ITEMS = DATA.items;
+const DRINK = DATA.drinkOptions;
+const EVENTS = (DATA.events || []).filter((e) => new Date(e.end || e.start) > new Date());
+const KEYS = ["calories", "fat", "satFat", "carbs", "fiber", "sugars", "protein", "sodium", "cholesterol"];
+const DV = { fat: 78, satFat: 20, cholesterol: 300, sodium: 2300, carbs: 275, fiber: 28 };
+const ADDON_COURSE = /add|topping|spread|cheese|side|sauce|dressing|extra|option/i;
+const SERVINGS = [[0.5, "½"], [1, "1"], [1.5, "1½"], [2, "2"]];
+// Dairy Bar scoops, as multiples of the label's 2/3 cup. Cornell doesn't publish scoop weights,
+// so these are typical scoop-shop amounts: about ½, 1, 1½ and 2 cups.
+const SCOOPS = [[0.75, "Kiddie"], [1.5, "Small"], [2.25, "Medium"], [3, "Large"]];
+const SCOOP_CUPS = { 0.75: "½ cup", 1.5: "1 cup", 2.25: "1½ cups", 3: "2 cups" };
+const sizesFor = (it) => (it.source === "dairy" ? SCOOPS : SERVINGS);
+const startServings = (it) => (it.source === "dairy" ? 1.5 : 1);
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const r0 = (v) => Math.round(v ?? 0);
+const store = {
+  get(k, f) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : f; } catch { return f; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const tidy = (n) => { n = n.replace(/:\s*$/, "").trim(); return n === n.toUpperCase() ? n.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : n; };
+const isReal = (it) => it && it.calories != null && !/^see dining facility/i.test(it.name);
+
+const HOME = {};
+for (const e of DATA.eateries) for (const c of e.courses) for (const id of c.items) HOME[id] ??= { eatery: e, course: tidy(c.name) };
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const S = {
+  view: "places", eatery: null, item: null, q: "", from: "menu",
+  diets: new Set(store.get("diets", [])), avoid: new Set(store.get("avoid", [])), sort: "menu",
+  servings: 1, removed: new Set(), extras: new Set(), size: 16, milk: "None", pumps: 0, whip: false,
+  scroll: {},
+};
+
+/* ---------- Navigation ---------- */
+function go(view, opts = {}, back = false) {
+  S.scroll[S.view] = scrollY;
+  Object.assign(S, opts, { view });
+  render(back);
+  scrollTo({ top: back ? S.scroll[view] || 0 : 0, behavior: "instant" });
+  history.pushState(navState((history.state?.depth ?? 0) + 1), "", hashFor());
+}
+// Each screen gets a history entry and a shareable URL (#/place/12, #/item/345, #/pick/protein),
+// so the phone's back button and links behave like a normal site.
+const NAV = ["view", "eatery", "tab", "pick", "item", "groupIds", "from", "base", "q"];
+function navState(depth) { const o = { depth }; for (const k of NAV) o[k] = S[k] ?? null; return o; }
+function hashFor() {
+  const h = S.view === "menu" ? `#/place/${S.eatery}` : S.view === "pick" ? `#/pick/${S.pick}` : S.view === "item" ? `#/item/${S.item}` : "";
+  return h || location.pathname + location.search;
+}
+const itemOpts = (it) => ({ item: it.id, servings: startServings(it), removed: new Set(), extras: new Set(), size: 16, milk: it.drink?.milk ?? "None", pumps: 0, whip: false });
+const groupOf = (ids) => (ids ? groupRows(ids.map((x) => ITEMS[x]))[0].group : null);
+function fromHash() {
+  const [, kind, id] = location.hash.match(/^#\/(place|pick|item)\/([\w-]+)/) || [];
+  const it = ITEMS[id];
+  if (kind === "place" && DATA.eateries.some((e) => e.id === +id)) Object.assign(S, { view: "menu", eatery: +id, tab: 0 });
+  else if (kind === "pick" && PICKS[id]) Object.assign(S, { view: "pick", pick: id });
+  else if (kind === "item" && it && HOME[it.id]) Object.assign(S, { view: "item", eatery: HOME[it.id].eatery.id, from: "menu", group: null, groupIds: null, ...itemOpts(it) });
+  else S.view = "places";
+}
+addEventListener("popstate", (ev) => {
+  const st = ev.state;
+  if (!st) fromHash();
+  else {
+    for (const k of NAV) S[k] = st[k];
+    S.group = groupOf(S.groupIds);
+    if (S.view === "item") Object.assign(S, itemOpts(ITEMS[S.item]));
+  }
+  $("#q").value = S.q || "";
+  lastCal = null;
+  $("#sheetRoot").innerHTML = "";
+  render(true);
+  scrollTo({ top: S.scroll[S.view] || 0, behavior: "instant" });
+});
+function render(back) {
+  lastInsight = "";
+  const v = $("#view");
+  v.className = "";
+  if (S.q && S.view !== "item") v.innerHTML = searchHTML();
+  else if (S.view === "places") v.innerHTML = placesHTML();
+  else if (S.view === "menu") v.innerHTML = menuHTML();
+  else if (S.view === "pick") v.innerHTML = pickHTML();
+  else { v.innerHTML = itemHTML(); update(true); }
+  watchMini();
+  requestAnimationFrame(moveInk);
+}
+// When the big calorie number scrolls away, pin a small readout to the top.
+let miniObs;
+function watchMini() {
+  miniObs?.disconnect(); $("#mini").classList.remove("show");
+  const big = $(".big"); if (!big) return;
+  $("#miniName").textContent = S.group ? S.group.title : ITEMS[S.item].name;
+  miniObs = new IntersectionObserver(([e]) => $("#mini").classList.toggle("show", !e.isIntersecting && e.boundingClientRect.top < 0));
+  miniObs.observe(big);
+}
+addEventListener("keydown", (e) => { if (e.key === "/" && document.activeElement !== $("#q")) { e.preventDefault(); $("#q").focus(); return; } if (e.key === "Escape") { if ($("#sheetRoot").innerHTML) closeSheet(); else goBack(); } });
+function goBack() {
+  if (history.state?.depth > 0) return history.back();
+  if (S.view === "item") go(S.from === "search" ? S.base : S.from, {}, true);
+  else if ((S.view === "menu" || S.view === "pick") && !S.q) go("places", {}, true);
+}
+
+/* ---------- Filters ---------- */
+function passes(it) {
+  if (!isReal(it)) return false;
+  for (const d of S.diets) if (!(it.traits.includes(d) || (d === "Vegetarian" && it.traits.includes("Vegan")))) return false;
+  return !(it.allergens || []).some((a) => S.avoid.has(a));
+}
+const filterCount = () => S.diets.size + S.avoid.size + (S.sort !== "menu");
+function sortItems(list) {
+  const by = { light: (a, b) => a.calories - b.calories, protein: (a, b) => (b.protein || 0) - (a.protein || 0) }[S.sort];
+  return by ? [...list].sort(by) : list;
+}
+
+/* ---------- Views ---------- */
+// Add-ons and condiments (a slice of cheese, a spread) aren't meals, so quick picks skip them.
+const ADDON_IDS = new Set(DATA.eateries.flatMap((e) => e.courses.filter((c) => ADDON_COURSE.test(c.name) || /^(sauces|additional items)$/i.test(c.name)).flatMap((c) => c.items)));
+const meal = (it) => !ADDON_IDS.has(it.id) && it.calories >= 200 && !it.typical;
+const PICKS = {
+  protein: { title: "High protein", hint: "30g or more", test: (it) => meal(it) && it.protein >= 30, sort: (a, b) => b.protein - a.protein },
+  light: { title: "Under 500", hint: "calorie meals", test: (it) => meal(it) && it.calories <= 500, sort: (a, b) => b.protein / b.calories - a.protein / a.calories },
+  vegan: { title: "Vegan", hint: "meals", test: (it) => meal(it) && it.traits.includes("Vegan"), sort: (a, b) => a.calories - b.calories },
+};
+
+/* ---------- Where should I go? ---------- */
+// Ask what sounds good and where you are, then rank cafés by open-now and walking time.
+const SWEET = /\b(cookies?|brownies?|cake|cupcakes?|muffins?|pastry|pastries|donuts?|doughnuts?|scones?|pie|sundae|shakes?|cinnamon rolls?|danish|blondies?|chocolate croissant|apple butter croissant|almond croissant|parfait|ice cream)\b/i;
+const SAVORY = /english muffin|\b(eggs?|ham|turkey|chicken|bacon|sausage|cheddar|swiss|tuna|salmon|beef)\b/i;
+const byProtein = (a, b) => (b.protein || 0) - (a.protein || 0);
+const WANTS = {
+  coffee: { label: "Coffee" },
+  breakfast: { label: "Breakfast", test: (it) => meal(it) && /\b(eggs?|bagel|pancakes?|waffles?|oats|oatmeal|breakfast|omelet|frittata|burrito|hash)\b/i.test(it.name), sort: byProtein },
+  meal: { label: "A real meal", test: (it) => meal(it) && it.calories >= 450 && !SWEET.test(it.name), sort: byProtein },
+  light: { label: "Something light", test: PICKS.light.test, sort: PICKS.light.sort },
+  protein: { label: "High protein", test: PICKS.protein.test, sort: PICKS.protein.sort },
+  sweet: { label: "Something sweet", test: (it) => !ADDON_IDS.has(it.id) && !it.typical && (it.source === "dairy" || (SWEET.test(it.name) && !SAVORY.test(it.name) && it.calories >= 120)), sort: (a, b) => a.calories - b.calories },
+  vegan: { label: "Vegan", test: PICKS.vegan.test, sort: byProtein },
+};
+const SPOTS = [
+  ["North Campus", 42.4556, -76.4778], ["West Campus", 42.4470, -76.4889], ["Arts Quad", 42.4489, -76.4851],
+  ["Ag Quad", 42.4482, -76.4787], ["Engineering Quad", 42.4446, -76.4824], ["Collegetown", 42.4418, -76.4855],
+];
+const PIN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
+// Straight-line distance, stretched by a third for paths and stairs, at a 80 m/min walk.
+function walkMin(lat1, lng1, lat2, lng2) {
+  const R = 6371000, rad = Math.PI / 180, dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+  return Math.max(1, Math.round((2 * R * Math.asin(Math.sqrt(h)) * 1.33) / 80));
+}
+S.want = null;
+S.at = (() => { const n = store.get("at", null); const s = SPOTS.find(([x]) => x === n); return s ? { name: s[0], lat: s[1], lng: s[2] } : null; })();
+const favFirst = (sort) => (a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || sort(a, b);
+function suggestions() {
+  const w = WANTS[S.want], coffee = ITEMS[DATA.eateries.find((e) => e.id === 9000)?.courses.flatMap((c) => c.items).find((id) => ITEMS[id].name === "Brewed Coffee")];
+  return DATA.eateries.filter((e) => e.kind === "place" && e.live?.lat).map((e) => {
+    let best, n;
+    if (S.want === "coffee") {
+      if (!coffee?.where?.includes(e.live.name)) return null;
+      best = coffee; n = 1;
+    } else {
+      const hits = [...new Set(e.courses.flatMap((c) => c.items))].map((id) => ITEMS[id]).filter((it) => passes(it) && w.test(it)).sort(favFirst(w.sort));
+      if (!hits.length) return null;
+      best = hits[0]; n = hits.length;
+    }
+    const min = walkMin(S.at.lat, S.at.lng, e.live.lat, e.live.lng), st = status(e);
+    return { e, best, n, min, st, score: min + (st?.open ? 0 : 1000) };
+  }).filter(Boolean).sort((a, b) => a.score - b.score).slice(0, 3);
+}
+function askHTML() {
+  return `<section class="ask" aria-label="Where should I go?">
+    <p class="ask-q">What are you in the mood for?</p>
+    <div class="chips">${Object.entries(WANTS).map(([k, w]) => `<button class="chip ${S.want === k ? "sel" : ""}" data-want="${k}">${w.label}</button>`).join("")}</div>
+    <div id="askWhere">${S.want ? whereHTML() : ""}</div>
+    <div class="ask-out" id="askOut" aria-live="polite">${S.want && S.at ? suggHTML() : ""}</div>
+  </section>`;
+}
+function whereHTML() {
+  return `<div class="ask-step"><p class="ask-q">Where are you right now?</p>
+    <div class="chips">${SPOTS.map(([n]) => `<button class="chip ${S.at?.name === n ? "sel" : ""}" data-at="${n}">${n}</button>`).join("")}${"geolocation" in navigator ? `<button class="chip loc ${S.at?.name === "you" ? "sel" : ""}" data-locate>${PIN}Use my location</button>` : ""}</div></div>`;
+}
+function suggHTML() {
+  const list = suggestions();
+  if (!list.length) return `<p class="ask-sum">Nothing matches that right now${filterCount() ? " with your filters on" : ""}.</p>`;
+  const top = list[0], from = S.at.name === "you" ? "" : ` from ${S.at.name}`;
+  const when = top.st ? (top.st.open ? `and ${top.st.text.replace(/^Open/, "open")}` : `but it's closed. ${top.st.text}`) : "";
+  const sum = top.st?.open || !top.st ? `${top.e.live.name} is ${top.min} min away${from} ${when}.` : `Nothing that fits is open right now. ${top.e.live.name} is closest${from}, ${top.min} min away. ${top.st.text}.`;
+  return `<p class="ask-sum" id="askSum">${esc(sum)}</p><ol class="sugg stagger">${list.map(({ e, best, n, min, st }, i) => `<li style="--i:${i}">
+    <button class="sg" data-place="${e.id}">${e.logo ? `<span class="mark"><img src="${e.logo}" alt=""></span>` : `<span class="mark mono">${initials(e.name)}</span>`}
+      <span><b>${esc(e.live.name)}</b><small>${st ? `<span class="${st.open ? "open" : ""}">${esc(st.text)}</span>` : ""}${S.want === "coffee" ? "" : ` · ${n} ${n === 1 ? "option" : "options"}`}</small></span>
+      <span class="sg-min">${min}<small>min walk</small></span></button>
+    <button class="sg-try" data-item="${best.id}"><span>Try</span><b>${esc(best.name)}</b>${best.fav ? `<span class="fav">Fan favorite</span>` : ""}<span class="kc">${r0(best.calories)} cal${best.protein >= 15 ? ` · ${r0(best.protein)}g protein` : ""}</span></button>
+  </li>`).join("")}</ol>`;
+}
+function refreshAsk() {
+  const out = $("#askOut"); if (!out) return;
+  out.innerHTML = S.want && S.at ? suggHTML() : "";
+}
+function askClick(d, t) {
+  if (d.want) {
+    S.want = S.want === d.want ? null : d.want;
+    document.querySelectorAll("[data-want]").forEach((b) => b.classList.toggle("sel", b.dataset.want === S.want));
+    const where = $("#askWhere");
+    if (!S.want) where.innerHTML = ""; else if (!where.innerHTML) where.innerHTML = whereHTML();
+    return refreshAsk();
+  }
+  if (d.at) {
+    const s = SPOTS.find(([x]) => x === d.at); S.at = { name: s[0], lat: s[1], lng: s[2] }; store.set("at", s[0]);
+  } else {
+    t.disabled = true; t.lastChild.textContent = "Finding you…";
+    return navigator.geolocation.getCurrentPosition((pos) => {
+      S.at = { name: "you", lat: pos.coords.latitude, lng: pos.coords.longitude };
+      t.disabled = false; t.lastChild.textContent = "Use my location";
+      document.querySelectorAll("[data-at]").forEach((b) => b.classList.remove("sel")); t.classList.add("sel");
+      refreshAsk();
+    }, () => { t.lastChild.textContent = "Location is off. Pick a spot"; }, { timeout: 8000, maximumAge: 300000 });
+  }
+  document.querySelectorAll("[data-at],[data-locate]").forEach((b) => b.classList.toggle("sel", b.dataset.at === S.at.name));
+  refreshAsk();
+}
+/* ---------- Hours (from Cornell Dining's live feed) ---------- */
+const TZ = "America/New_York";
+const fmtTime = (ts) => new Date(ts * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ }).replace(":00", "").replace(" ", "").toLowerCase();
+const dayKey = (ts) => new Date(ts * 1000).toLocaleDateString("en-US", { timeZone: TZ });
+function status(e) {
+  const hours = e.live?.hours; if (!hours) return null;
+  const now = Date.now() / 1000;
+  const cur = hours.find(([a, b]) => a <= now && now < b);
+  if (cur) return { open: true, text: `Open until ${fmtTime(cur[1])}` };
+  const next = hours.filter(([a]) => a > now).sort((x, y) => x[0] - y[0])[0];
+  if (!next) return { open: false, text: "Closed" };
+  const day = dayKey(next[0]) === dayKey(now) ? "" : new Date(next[0] * 1000).toLocaleDateString("en-US", { weekday: "short", timeZone: TZ }) + " ";
+  return { open: false, text: `Opens ${day}${fmtTime(next[0])}` };
+}
+const checked = new Date(DATA.scrapedAt + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const CHECK = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5 9-10"/></svg>`;
+
+function placesHTML() {
+  const count = (k) => Object.values(ITEMS).filter((it) => isReal(it) && PICKS[k].test(it)).length;
+  const picks = Object.entries(PICKS).map(([k, p], i) => `<button class="pick" data-pick="${k}" style="--i:${i}"><i>${count(k)}</i><b>${p.title}</b><small>${p.hint}</small></button>`).join("")
+    + `<button class="pick" data-place="9000" style="--i:3"><i>${DATA.eateries.find((e) => e.id === 9000).courses.flatMap((c) => c.items).length}</i><b>Coffee & drinks</b><small>build your drink</small></button>`;
+  const countOf = (e) => new Set(e.courses.flatMap((c) => c.items).filter((id) => isReal(ITEMS[id]))).size;
+  const places = DATA.eateries.filter((e) => e.kind === "place").map((e, i) => ({ e, i, st: status(e) }))
+    .sort((a, b) => (b.st?.open ? 1 : 0) - (a.st?.open ? 1 : 0));
+  const list = places.map(({ e, i, st }, k) => {
+    const what = e.courses.map((c) => tidy(c.name)).filter((c) => !/^desserts: see/i.test(c) && !/^menu$/i.test(c)).slice(0, 2).join(", ");
+    return `<li style="--i:${Math.min(k, 12)}"><button class="tile" data-place="${e.id}">${art(e, i, st)}<span class="txt"><b>${esc(e.name)}</b><small>${what ? esc(what) + " · " : ""}${countOf(e)} items</small></span></button></li>`;
+  }).join("");
+  const lines = DATA.eateries.filter((e) => e.kind === "line").map((e, i) =>
+    `<li style="--i:${i}"><button class="place" data-place="${e.id}"><span><b>${esc(e.name)}</b></span><small>${countOf(e)} items</small></button></li>`).join("");
+  const openCount = places.filter((p) => p.st?.open).length;
+  return `${askHTML()}<p class="eyebrow">Quick picks from every eatery</p><div class="picks stagger">${picks}</div>
+    ${EVENTS.length ? `<p class="eyebrow ev-label">Food events coming up</p><div class="ev-strip">${EVENTS.map(evCard).join("")}</div>` : ""}
+    <p class="eyebrow">Choose where you're eating${openCount ? ` · ${openCount} open now` : ""}</p><ul class="tiles stagger">${list}</ul>
+    <p class="eyebrow" style="margin-top:40px">Sold at several cafés</p>
+    <p class="note" style="margin:0 0 6px">Cornell lists nutrition for these product lines, but they aren't a single place.</p>
+    <ul class="lines stagger">${lines}</ul>`;
+}
+const initials = (name) => name.replace(/&/g, "").split(/\s+/).filter((w) => w && !/^(the|of|from|on|us)$/i.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+function art(e, i = 0, st = null) {
+  const badge = st ? `<span class="status ${st.open ? "open" : ""}">${esc(st.text)}</span>` : "";
+  if (e.logo) return `<span class="art logo"><img src="${e.logo}" alt="${esc(e.name)} logo">${badge}</span>`;
+  return `<span class="art mono ${i % 2 ? "alt" : ""}"><span aria-hidden="true">${initials(e.name)}</span>${badge}</span>`;
+}
+function headLogo(e) {
+  if (e.logo) return `<span class="head-logo logo"><img src="${e.logo}" alt="" style="width:86%;height:86%;object-fit:contain"></span>`;
+  if (e.typical) return "";
+  return `<span class="head-logo mono"><span class="mono-s">${initials(e.name)}</span></span>`;
+}
+function pickHTML() {
+  const p = PICKS[S.pick];
+  const hits = Object.values(ITEMS).filter((it) => passes(it) && p.test(it)).sort(p.sort);
+  const max = Math.max(...hits.map((it) => it.calories), 1);
+  return `<button class="back-btn" data-back>${arrow()}Home</button>
+    <div class="menu-head"><h1>${p.title}</h1><button class="filter-btn ${filterCount() ? "on" : ""}" data-filters>${filterCount() ? `Filters · ${filterCount()}` : "Filters"}</button></div>
+    <p class="note">${hits.length} meals across campus</p>
+    <div class="stagger" style="margin-top:18px">${hits.map((it, i) => itemRow(it, Math.min(i, 14), true, S.pick === "protein")).join("")}</div>`;
+}
+
+// A short plain-English line saying what the item is.
+const andList = (a) => (a.length > 1 ? a.slice(0, -1).join(", ") + " and " + a[a.length - 1] : a[0] || "");
+const cleanDesc = (d) => d.replace(/^Premium,?\s+/i, "").replace(/^\w/, (c) => c.toUpperCase()).replace(/\s+/g, " ").trim();
+const describe = (it) => it.desc ? cleanDesc(it.desc).split(/(?<=[.!])\s/)[0].replace(/[.!]$/, "") : it.about ? "Made with " + andList(it.about) : "";
+function itemRow(it, i, where, showProtein) {
+  const tag = it.traits.includes("Vegan") ? "Vegan" : it.traits.includes("Vegetarian") ? "Vegetarian" : "";
+  const bits = [it.fav && "Fan favorite", where && HOME[it.id]?.eatery.name, it.seasonal && "Seasonal", it.source === "dairy" && !where && "per 2/3 cup", showProtein && `${r0(it.protein)}g protein`].filter(Boolean);
+  const sub = tag || bits.length ? `<span class="sub">${tag ? `<span class="veg">${tag}</span>${bits.length ? " · " : ""}` : ""}${esc(bits.join(" · "))}</span>` : "";
+  const what = describe(it);
+  return `<button class="item" data-item="${it.id}" style="--i:${i}">
+    <span class="item-txt"><span class="nm">${esc(it.name)}</span>${what ? `<span class="what">${esc(what)}</span>` : ""}${sub}</span>
+    <span class="kc">${r0(it.calories)}<small>cal</small></span></button>`;
+}
+
+// Condiments, spreads and single toppings go in their own "Extras" tab so the meals stand out.
+// "Build your own" sections stay whole, since there the parts are the meal.
+const isBuild = (cname) => /build your own|create your own|choices/i.test(cname);
+const SMALL_SERVING = /portion|slice|tbsp|tablespoon|ounce|\boz\b|packet|each|cup|scoop/i;
+function isExtra(it, cname) {
+  if (it.typical || isBuild(cname)) return false;
+  if (/add|topping|spread|sauce|dressing|condiment/i.test(cname)) return true;
+  if (/dressing|sauce|spread|cream cheese|butter portion|salsa|guacamole|sour cream|syrup|honey/i.test(it.name) && it.calories < 250) return true;
+  if (!it.parts.length && it.calories < 150) return true;
+  return it.calories < 200 && SMALL_SERVING.test(it.serving) && !it.parts.length;
+}
+function menuTabs(e) {
+  const tabs = [], extras = [];
+  for (const c of e.courses) {
+    const name = tidy(c.name), items = [];
+    for (const id of c.items) {
+      const it = ITEMS[id];
+      if (!passes(it)) continue;
+      (isExtra(it, c.name) ? extras : items).push(it);
+    }
+    const short = isBuild(name) ? "Build your own" : name.replace(/\s*(always available|menu options|options)$/i, "") || name;
+    const note = items[0]?.source === "dairy" ? "Cornell Dairy's flavors, from their official nutrition labels (per 2/3 cup)." : "";
+    if (items.length) tabs.push({ name: short.replace(/^Cornell /, ""), items, note });
+  }
+  // Several stations list the same topping; show each once, A to Z.
+  const seen = new Set();
+  const uniq = extras.filter((it) => { const k = it.name.toLowerCase(); return !seen.has(k) && seen.add(k); }).sort((a, b) => a.name.localeCompare(b.name));
+  if (uniq.length) tabs.push({ name: "Extras", items: uniq, note: "Add-ons, spreads and toppings, A to Z" });
+  return tabs.map((t) => ({ ...t, items: t.name === "Extras" && S.sort === "menu" ? t.items : sortItems(t.items) }));
+}
+
+function menuHTML() {
+  const e = DATA.eateries.find((x) => x.id === S.eatery);
+  const tabs = menuTabs(e);
+  const fc = filterCount();
+  const k = Math.min(S.tab ?? 0, Math.max(0, tabs.length - 1));
+  return `<button class="back-btn" data-back>${arrow()}All places</button>
+    <div class="menu-head"><div class="title-row">${headLogo(e)}<h1>${esc(e.name)}</h1></div><button class="filter-btn ${fc ? "on" : ""}" data-filters>${fc ? `Filters · ${fc}` : "Filters"}</button></div>
+    ${menuMeta(e)}
+    ${tabs.length > 1 ? `<div class="tabs" role="tablist">${tabs.map((t, i) => `<button role="tab" class="tab" data-tab="${i}" aria-selected="${i === k}">${esc(t.name)}<small>${t.name === "Extras" ? t.items.length : groupRows(t.items).length}</small></button>`).join("")}<span class="ink" id="ink"></span></div>` : ""}
+    <div id="tabBody">${tabBody(tabs[k])}</div>`;
+}
+/* ---------- Variants: one row per sandwich, with bread / egg / meat picked on the item screen ---------- */
+const DIMS = {
+  bread: { label: "Bread", re: /\b(english muffin|bagel|croissant|biscuit|flatbread|ciabatta|sourdough|whole grain|gluten free)\b/i, none: "Bread" },
+  egg: { label: "Egg", re: /\begg whites?\b/i, none: "Whole egg", name: () => "Egg white" },
+  meat: { label: "Add meat", re: /\b(bacon|sausage|ham)\b/i, none: "No meat" },
+};
+const cap = (w) => w.replace(/\b\w/g, (c) => c.toUpperCase());
+function strip(name, dims) {
+  let b = name;
+  for (const d of dims) b = b.replace(DIMS[d].re, " ");
+  return b.replace(/\s*-\s*/g, " ").replace(/\s+/g, " ").replace(/^\s*-|-\s*$/g, "").trim();
+}
+// Returns rows: a single item, or a group of items that differ only by bread / egg / meat.
+function groupRows(items) {
+  const dims = ["bread", "egg", "meat"];
+  const by = new Map();
+  for (const it of items) {
+    const key = strip(it.name, dims).toLowerCase();
+    by.has(key) ? by.get(key).push(it) : by.set(key, [it]);
+  }
+  const rows = [], done = new Set();
+  for (const it of items) {
+    const key = strip(it.name, dims).toLowerCase();
+    if (done.has(key)) continue;
+    done.add(key);
+    const members = by.get(key);
+    if (members.length < 2) { rows.push({ it }); continue; }
+    const variants = members.map((m) => {
+      const v = { it: m };
+      for (const d of dims) { const hit = m.name.match(DIMS[d].re); v[d] = hit ? (DIMS[d].name?.() || cap(hit[1].toLowerCase())) : DIMS[d].none; }
+      return v;
+    });
+    const used = dims.filter((d) => new Set(variants.map((v) => v[d])).size > 1);
+    // Default: whole egg, no meat, first bread listed.
+    variants.sort((a, b) => (a.egg !== "Whole egg") - (b.egg !== "Whole egg") || (a.meat !== "No meat") - (b.meat !== "No meat"));
+    rows.push({ group: { title: strip(members[0].name, dims) || members[0].name, variants, dims: used } });
+  }
+  return rows;
+}
+function groupRow(g, i) {
+  const cals = g.variants.map((v) => v.it.calories), lo = r0(Math.min(...cals)), hi = r0(Math.max(...cals));
+  const opts = g.dims.map((d) => { const n = new Set(g.variants.map((v) => v[d])).size; return d === "egg" ? "egg white option" : `${n} ${d === "bread" ? "breads" : "meats"}`; });
+  const ids = g.variants.map((v) => v.it.id).join(",");
+  const veg = g.variants.every((v) => v.it.traits.includes("Vegetarian") || v.it.traits.includes("Vegan"));
+  return `<button class="item" data-group="${ids}" style="--i:${i}">
+    <span><span class="nm">${esc(g.title)}</span><span class="sub">${veg ? `<span class="veg">Vegetarian</span> · ` : ""}${g.variants.length} ways · ${opts.join(", ")}</span></span>
+    <span class="kc">${lo === hi ? lo : `${lo}<i>–</i>${hi}`}<small>cal</small></span></button>`;
+}
+
+function tabBody(t, dir = 0) {
+  if (!t) return `<p class="empty">Nothing here matches your filters.</p>`;
+  const rows = t.name === "Extras" ? t.items.map((it) => ({ it })) : groupRows(t.items);
+  return `<div class="tab-body ${dir > 0 ? "from-right" : dir < 0 ? "from-left" : ""}">${t.note ? `<p class="note">${t.note}</p>` : ""}<div class="stagger">${rows.map((r, i) => r.group ? groupRow(r.group, Math.min(i, 14)) : itemRow(r.it, Math.min(i, 14))).join("")}</div></div>`;
+}
+function moveInk() {
+  const on = document.querySelector(".tab[aria-selected=true]"), ink = $("#ink");
+  if (!on || !ink) return;
+  ink.style.width = on.offsetWidth + "px"; ink.style.transform = `translateX(${on.offsetLeft}px)`;
+  on.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+}
+function switchTab(k) {
+  const prev = S.tab ?? 0; if (k === prev) return;
+  S.tab = k;
+  const tabs = menuTabs(DATA.eateries.find((x) => x.id === S.eatery));
+  document.querySelectorAll(".tab").forEach((b) => b.setAttribute("aria-selected", +b.dataset.tab === k));
+  $("#tabBody").innerHTML = tabBody(tabs[k], k - prev);
+  moveInk();
+  const top = $(".tabs").getBoundingClientRect().top + scrollY - 70;
+  if (scrollY > top) scrollTo({ top, behavior: "smooth" });
+}
+function menuMeta(e) {
+  let lead = "", detail;
+  if (e.kind === "drinks") detail = "Every drink here is one Cornell Dining lists as sold on campus, and each shows which cafés carry it. Cornell doesn't publish drink nutrition, so the numbers are typical values for that drink.";
+  else if (e.kind === "line") { lead = `<span>Sold at several cafés</span>`; detail = `Every item is on Cornell's official nutrition list (NetNutrition, checked ${checked}). This is a product line sold at several cafés, so what's in stock varies.`; }
+  else {
+    const st = status(e), L = e.live;
+    lead = `${st ? `<span class="${st.open ? "open" : ""}">${esc(st.text)}</span>` : ""}${L.location ? `<span>${esc(L.location)}</span>` : ""}`;
+    detail = `Every item here is on Cornell's official nutrition list for ${L.name} (NetNutrition, checked ${checked}). ${L.sells.length ? `Cornell Dining says it sells: ${L.sells.map(tidy).join(", ")}.` : "Cornell Dining's live list doesn't name food categories for this café."} ${e.courses.some((c) => /ice cream/i.test(c.name)) ? "Cornell's nutrition site doesn't list ice cream, so the ice cream tab uses Cornell Dairy's own flavor labels. " : ""}Specials and stock change, so the counter has the final say.`;
+  }
+  return `<div class="meta-line">${lead}<details class="vline"><summary>${CHECK}${e.kind === "drinks" ? "Sold on campus" : "On Cornell's official menu"}</summary><p>${esc(detail)}</p></details></div>`;
+}
+
+function searchHTML() {
+  const words = S.q.split(/\s+/);
+  const named = [], other = [];
+  for (const it of Object.values(ITEMS)) {
+    if (!passes(it)) continue;
+    const name = it.name.toLowerCase();
+    if (words.every((w) => name.includes(w))) named.push(it);
+    else if (words.every((w) => `${name} ${HOME[it.id]?.eatery.name} ${it.ingredients}`.toLowerCase().includes(w))) other.push(it);
+  }
+  const hits = [...sortItems(named), ...sortItems(other)].slice(0, 80);
+  return `<p class="eyebrow">${hits.length ? `${named.length + other.length} matches` : "No matches"}</p>
+    <div class="stagger">${hits.map((it, i) => itemRow(it, Math.min(i, 14), true)).join("") || `<p class="empty">Try a different word, like “egg” or “wrap”.</p>`}</div>`;
+}
+
+function addons(it) {
+  const home = HOME[it.id]?.eatery; if (!home || it.drink) return [];
+  const ids = home.courses.filter((c) => ADDON_COURSE.test(c.name)).flatMap((c) => c.items);
+  return [...new Set(ids)].map((i) => ITEMS[i]).filter((x) => isReal(x) && x.id !== it.id && x.calories > 0).slice(0, 12);
+}
+
+function itemHTML() {
+  const it = ITEMS[S.item], home = HOME[it.id];
+  const ad = addons(it);
+  let custom = "";
+  if (it.drink) {
+    custom = `<div class="block"><h3>Size</h3>${seg([12, 16, 20].map((z) => [z, `${z} oz`]), "size")}</div>
+      ${it.drink.milkOz ? `<div class="block"><h3>Milk</h3><div class="chips">${Object.keys(DRINK.milks).map((m) => `<button class="chip" data-milk="${m}">${m === "None" ? "No milk" : m}</button>`).join("")}</div></div>` : ""}
+      <div class="block row-opt"><h3 style="margin:0">Flavor syrup</h3><div class="stepper"><button data-pump="-1" aria-label="Fewer pumps">−</button><output id="pumps"></output><button data-pump="1" aria-label="More pumps">+</button></div></div>
+      ${it.drink.milkOz ? `<div class="block"><h3>Whipped cream</h3><div class="chips"><button class="chip" data-whip="0">No</button><button class="chip" data-whip="1">Yes</button></div></div>` : ""}
+      <p class="est">Cornell doesn't publish drink nutrition. These are typical values for this drink.</p>`;
+  } else {
+    custom = `${variantPicker()}<div class="block"><h3>${it.source === "dairy" ? "Scoop size" : "How much"}</h3>${seg(sizesFor(it).map(([v, l]) => [v, `${l}`]), "serv")}${it.source === "dairy" ? `<p class="est">Cornell doesn't publish scoop weights, so sizes are typical scoops: Kiddie about ½ cup up to Large about 2 cups. The label is for 2/3 cup.</p>` : ""}</div>
+      ${it.parts.length ? `<div class="block"><h3>Leave something off <small>tap to remove</small></h3><div class="chips">${it.parts.map((p) => `<button class="chip part" data-part="${esc(p.label)}">${esc(p.label)}<small>${r0(p.n.calories)}</small></button>`).join("")}</div><p class="est" id="est" hidden>Some of these are estimates. Cornell only publishes nutrition for the whole dish.</p></div>` : ""}
+      ${ad.length ? `<div class="block"><h3>Add something</h3><div class="chips">${ad.map((x) => `<button class="chip add" data-add="${x.id}">+ ${esc(x.name)}<small>${r0(x.calories)}</small></button>`).join("")}</div></div>` : ""}`;
+  }
+  return `<button class="back-btn" data-back>${arrow()}${S.from === "search" ? "Search results" : S.from === "pick" ? PICKS[S.pick].title : esc(home?.eatery.name)}</button>
+    <h1 id="itemName">${esc(S.group ? S.group.title : it.name)}</h1>
+    ${it.desc ? `<p class="lede">${esc(cleanDesc(it.desc))}${/[.!]$/.test(it.desc.trim()) ? "" : "."}</p>` : it.about ? `<p class="lede">${esc(describe(it))}.</p>` : ""}
+    ${sourceLine(it, home)}
+    <div class="big"><span class="roll" id="roll" aria-live="polite"></span><span class="unit">calories</span></div>
+    <div class="macros" id="macros"></div>
+    <p class="insight" id="insight" aria-live="polite"><span id="insightTxt"></span></p>
+    <div class="day"><div class="day-bar"><span id="dayBar" style="width:0"></span></div><span id="dayTxt"></span></div>
+    ${custom}
+    <div id="facts"></div>
+    <div id="contains"></div>
+    ${it.ingredients ? `<details class="ingr"><summary>Ingredients</summary><p>${esc(it.ingredients)}</p></details>` : ""}`;
+}
+
+// Segmented control: buttons plus a thumb that slides to the selected one.
+function seg(options, key) {
+  return `<div class="seg2" data-seg="${key}">${options.map(([v, l]) => `<button type="button" data-${key}="${esc(v)}">${esc(l)}</button>`).join("")}<span class="thumb"></span></div>`;
+}
+function moveThumbs() {
+  document.querySelectorAll(".seg2").forEach((g) => {
+    const on = g.querySelector("button.sel"), t = g.querySelector(".thumb");
+    if (!on) { t.style.opacity = 0; return; }
+    t.style.opacity = 1; t.style.width = on.offsetWidth + "px"; t.style.transform = `translateX(${on.offsetLeft}px)`;
+  });
+}
+function variantPicker() {
+  const g = S.group; if (!g) return "";
+  return g.dims.map((d) => {
+    const vals = [...new Set(g.variants.map((v) => v[d]))];
+    return `<div class="block"><h3>${DIMS[d].label}</h3>${seg(vals.map((x) => [x, x]), "v-" + d)}</div>`;
+  }).join("");
+}
+function pickVariant(dim, val) {
+  const g = S.group, cur = g.variants.find((v) => v.it.id === S.item);
+  const want = { ...cur, [dim]: val };
+  const next = g.variants.find((v) => g.dims.every((d) => v[d] === want[d])) || g.variants.find((v) => v[dim] === val);
+  if (!next || next.it.id === S.item) return;
+  // Swap the item underneath but keep the screen, so the number rolls instead of the page sliding.
+  S.item = next.it.id; S.removed = new Set(); S.extras = new Set();
+  const keep = lastCal, y = scrollY;
+  $("#view").innerHTML = itemHTML();
+  roll($("#roll"), keep); void $("#roll").offsetWidth;
+  update(); scrollTo(0, y); watchMini();
+}
+
+function sourceLine(it, home) {
+  const fav = it.fav ? `<p class="fav-line"><span class="fav">Fan favorite</span><a href="${esc(it.fav.url)}" target="_blank" rel="noopener">${esc(it.fav.why)}</a></p>` : "";
+  if (it.source === "dairy") return `<div class="src-line">${CHECK}From Cornell Dairy's nutrition label · ${esc(it.servingSize)}</div>${fav}
+    ${it.seasonal ? `<p class="est">Seasonal flavor, so it may not be in the case today.</p>` : ""}
+    ${it.labelNote ? `<p class="est">${esc(it.labelNote)}</p>` : ""}`;
+  if (!it.typical) return `<div class="src-line">${CHECK}On Cornell's NetNutrition list for ${esc(home?.eatery.live?.name || home?.eatery.name)} · ${esc(it.servingSize || it.serving)}</div>${fav}`;
+  const w = it.where || [];
+  const shown = w.slice(0, 4).join(", ") + (w.length > 4 ? ` and ${w.length - 4} more` : "");
+  return `<div class="src-line">${CHECK}Sold at ${esc(shown)}</div>
+    ${it.whereNote ? `<p class="est">${esc(it.whereNote)}</p>` : it.whereExact ? "" : `<p class="est">These cafés have a coffee bar on Cornell's list. Cornell doesn't publish each bar's drink menu, so ask if they make this one.</p>`}`;
+}
+
+/* ---------- Item math ---------- */
+function nutrition(it) {
+  const out = {};
+  if (it.drink) {
+    const d = it.drink, f = S.size / 16;
+    for (const k of KEYS) out[k] = (d.base[k] + (DRINK.milks[S.milk][k] * d.milkOz) / 8) * f + S.pumps * DRINK.syrup[k] + (S.whip ? DRINK.whip[k] : 0);
+    return out;
+  }
+  for (const k of KEYS) {
+    let v = it[k] ?? 0;
+    for (const p of it.parts) if (S.removed.has(p.label)) v -= p.n[k] || 0;
+    for (const x of S.extras) v += ITEMS[x][k] || 0;
+    out[k] = Math.max(0, v) * S.servings;
+  }
+  return out;
+}
+function allergens(it) {
+  if (!it.drink) return it.allergens || [];
+  const a = new Set(it.drink.allergens); const m = DRINK.milkAllergen[S.milk]; if (m) a.add(m); if (S.whip) a.add("Milk");
+  return [...a].sort();
+}
+
+/* ---------- Live updates on the item screen ---------- */
+// Count a number from what it shows now to its new value.
+function tween(el, to, suffix = "", ms = 450) {
+  const from = parseFloat(el.textContent) || 0;
+  if (from === to) { el.textContent = to + suffix; return; }
+  const t0 = performance.now();
+  const step = (t) => { const k = Math.min(1, (t - t0) / ms), e = 1 - (1 - k) ** 3; el.textContent = Math.round(from + (to - from) * e) + suffix; if (k < 1 && el.isConnected) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+let lastCal = null;
+function roll(el, value) {
+  const s = String(value);
+  if (el.childElementCount !== s.length) {
+    el.innerHTML = [...s].map(() => `<span class="col"><span class="strip">${"0123456789".split("").map((d) => `<span>${d}</span>`).join("")}</span></span>`).join("");
+    void el.offsetWidth;
+  }
+  [...s].forEach((d, i) => { el.children[i].firstChild.style.transform = `translateY(${-d}em)`; });
+  el.setAttribute("aria-label", `${value} calories`);
+}
+function update(first) {
+  const it = ITEMS[S.item], n = nutrition(it), cal = r0(n.calories);
+  const base = {}; for (const k of KEYS) base[k] = it[k] ?? 0;
+  if (first) { roll($("#roll"), String(cal).replace(/\d/g, "0")); void $("#roll").offsetWidth; }
+  roll($("#roll"), cal);
+  if (!first && lastCal != null && cal !== lastCal) {
+    const p = document.createElement("span"); p.className = "pop";
+    p.textContent = `${cal > lastCal ? "+" : "−"}${Math.abs(cal - lastCal)}`;
+    $(".big").append(p); setTimeout(() => p.remove(), 1200);
+  }
+  lastCal = cal;
+  setInsight(insightFor(it, n));
+  const pct = Math.round((cal / 2000) * 100);
+  requestAnimationFrame(() => { const bar = $("#dayBar"); if (bar) bar.style.width = Math.min(100, pct) + "%"; });
+  $("#dayTxt").textContent = `${pct}% of a 2,000-calorie day`;
+  $("#miniCal").innerHTML = `${cal}<small>cal</small>`;
+  if (!$("#macros").children.length) $("#macros").innerHTML = `<span><b data-m="protein">0g</b>protein</span><span><b data-m="carbs">0g</b>carbs</span><span><b data-m="fat">0g</b>fat</span>`;
+  document.querySelectorAll("[data-m]").forEach((b) => tween(b, r0(n[b.dataset.m]), "g"));
+
+  document.querySelectorAll("[data-serv]").forEach((b) => b.classList.toggle("sel", +b.dataset.serv === S.servings));
+  if (S.group) { const cur = S.group.variants.find((v) => v.it.id === S.item); for (const d of S.group.dims) document.querySelectorAll(`[data-v-${d}]`).forEach((b) => b.classList.toggle("sel", b.dataset["v-" + d] === cur[d] || b.getAttribute(`data-v-${d}`) === cur[d])); }
+  document.querySelectorAll("[data-part]").forEach((b) => { const off = S.removed.has(b.dataset.part); b.classList.toggle("off", off); b.setAttribute("aria-pressed", !off); });
+  document.querySelectorAll("[data-add]").forEach((b) => { const on = S.extras.has(+b.dataset.add); b.classList.toggle("sel", on); b.setAttribute("aria-pressed", on); });
+  document.querySelectorAll("[data-size]").forEach((b) => b.classList.toggle("sel", +b.dataset.size === S.size));
+  document.querySelectorAll("[data-milk]").forEach((b) => b.classList.toggle("sel", b.dataset.milk === S.milk));
+  document.querySelectorAll("[data-whip]").forEach((b) => b.classList.toggle("sel", (b.dataset.whip === "1") === S.whip));
+  requestAnimationFrame(moveThumbs);
+  if ($("#pumps")) $("#pumps").textContent = `${S.pumps} pump${S.pumps === 1 ? "" : "s"}`;
+  if ($("#est")) $("#est").hidden = !it.parts.some((p) => S.removed.has(p.label) && p.src === "typical");
+
+  // Values that differ from the dish as served turn the accent color.
+  const row = (label, k, unit, cls = "") => {
+    const dv = DV[k] ? `<b>${r0((n[k] / DV[k]) * 100)}%</b>` : "<span></span>";
+    const val = `<span class="${r0(n[k]) !== r0(base[k]) ? "chg" : ""}">${r0(n[k])}${unit}</span>`;
+    return `<div class="r ${cls}"><span>${cls.includes("in") ? label : `<b>${label}</b>`} ${val}</span>${dv}</div>`;
+  };
+  const serving = it.drink ? `${S.size} fl oz` : it.source === "dairy" ? `${sizesFor(it).find(([v]) => v === S.servings)?.[1] ?? ""} scoop, about ${SCOOP_CUPS[S.servings] ?? ""}` : `${SERVINGS.find(([v]) => v === S.servings)?.[1] ?? S.servings} × ${esc(it.servingSize || it.serving)}`;
+  $("#facts").innerHTML = `<div class="facts" aria-label="Nutrition Facts">
+    <h4>Nutrition Facts</h4>
+    <div class="serv"><span>Serving size</span><span>${serving}</span></div>
+    <div class="cal"><span>Calories</span><b>${cal}</b></div>
+    <div class="dvh">% Daily Value*</div>
+    ${row("Total Fat", "fat", "g")}${row("Saturated Fat", "satFat", "g", "in")}${row("Cholesterol", "cholesterol", "mg")}
+    ${row("Sodium", "sodium", "mg")}${row("Total Carbohydrate", "carbs", "g")}${row("Dietary Fiber", "fiber", "g", "in")}
+    ${row("Total Sugars", "sugars", "g", "in")}${it.addedSugars != null ? `<div class="r in2"><span>Includes ${r0(it.addedSugars * S.servings)}g Added Sugars</span><b>${r0((it.addedSugars * S.servings / 50) * 100)}%</b></div>` : ""}${row("Protein", "protein", "g", "end")}
+    <div class="foot">* Percent Daily Values are based on a 2,000 calorie diet.</div></div>`;
+  const al = allergens(it);
+  $("#contains").innerHTML = al.length ? `<p class="contains">Contains <b>${al.map(esc).join(", ")}</b>${S.removed.size ? `<br><small style="color:var(--muted)">As Cornell makes it. Leaving something off may not remove an allergen.</small>` : ""}</p>` : "";
+}
+
+/* ---------- Events ---------- */
+$("#view").addEventListener("click", (ev) => {
+  const t = ev.target.closest("button"); if (!t) return;
+  const d = t.dataset;
+  if ("back" in d) return goBack();
+  if (d.want || d.at || "locate" in d) return askClick(d, t);
+  if (d.place) return go("menu", { eatery: +d.place, tab: 0 });
+  if (d.tab) return switchTab(+d.tab);
+  if (d.pick) return go("pick", { pick: d.pick });
+  if (d.item || d.group) {
+    const groupIds = d.group ? d.group.split(",").map(Number) : null, group = groupOf(groupIds);
+    const it = ITEMS[group ? group.variants[0].it.id : +d.item];
+    lastCal = null;
+    return go("item", { group, groupIds, from: S.q ? "search" : S.view, ...itemOpts(it) });
+  }
+  const vk = Object.keys(d).find((k) => k.startsWith("v-") || /^v[A-Z]/.test(k));
+  if (vk) { const dim = vk.replace(/^v-?/, "").toLowerCase(); return pickVariant(dim, d[vk]); }
+  if ("filters" in d) return openSheet();
+  if (d.serv) S.servings = +d.serv;
+  else if (d.part) S.removed.has(d.part) ? S.removed.delete(d.part) : S.removed.add(d.part);
+  else if (d.add) S.extras.has(+d.add) ? S.extras.delete(+d.add) : S.extras.add(+d.add);
+  else if (d.size) S.size = +d.size;
+  else if (d.milk) S.milk = d.milk;
+  else if (d.pump) S.pumps = Math.min(8, Math.max(0, S.pumps + +d.pump));
+  else if (d.whip) S.whip = d.whip === "1";
+  else return;
+  update();
+});
+
+$("#q").addEventListener("input", (ev) => {
+  const was = !!S.q;
+  S.q = ev.target.value.trim().toLowerCase();
+  // Clearing the search returns to wherever you were when you started typing.
+  if (!was && S.q) S.base = S.view === "item" ? (S.eatery ? "menu" : "places") : S.view;
+  S.view = S.base || "places";
+  // Starting a search adds one history entry; later keystrokes just update it.
+  const depth = history.state?.depth ?? 0;
+  if (!was && S.q) history.pushState(navState(depth + 1), "", hashFor());
+  else history.replaceState(navState(depth), "", hashFor());
+  if (was && S.q) { $("#view").innerHTML = searchHTML(); return; }
+  render(!S.q);
+});
+
+/* ---------- Filter sheet ---------- */
+const DIETS = ["Vegan", "Vegetarian", "Halal", "Kosher"];
+const ALLERGENS = [...new Set(Object.values(ITEMS).flatMap((i) => i.allergens || []))].sort();
+function openSheet() {
+  $("#sheetRoot").innerHTML = `<div class="scrim" data-close></div>
+    <div class="sheet" role="dialog" aria-label="Filters">
+      <h3>Only show</h3><div class="chips">${DIETS.map((x) => `<button class="chip ${S.diets.has(x) ? "sel" : ""}" data-diet="${x}">${x}</button>`).join("")}</div>
+      <h3>Hide anything with</h3><div class="chips">${ALLERGENS.map((x) => `<button class="chip avoid ${S.avoid.has(x) ? "sel" : ""}" data-avoid="${esc(x)}">${esc(x)}</button>`).join("")}</div>
+      <h3>Order by</h3><div class="chips">${[["menu", "Menu"], ["light", "Fewest calories"], ["protein", "Most protein"]].map(([v, l]) => `<button class="chip ${S.sort === v ? "sel" : ""}" data-sort="${v}">${l}</button>`).join("")}</div>
+      <button class="done" data-close>Show results</button>
+    </div>`;
+}
+function closeSheet() { $("#sheetRoot").innerHTML = ""; store.set("diets", [...S.diets]); store.set("avoid", [...S.avoid]); render(); }
+$("#sheetRoot").addEventListener("click", (ev) => {
+  const t = ev.target.closest("[data-close],[data-diet],[data-avoid],[data-sort]"); if (!t) return;
+  const d = t.dataset;
+  if ("close" in d) return closeSheet();
+  if (d.sort) { S.sort = d.sort; t.parentNode.querySelectorAll(".chip").forEach((c) => c.classList.toggle("sel", c === t)); return; }
+  const set = d.diet ? S.diets : S.avoid, key = d.diet || d.avoid;
+  set.has(key) ? set.delete(key) : set.add(key);
+  t.classList.toggle("sel", set.has(key));
+});
+
+function arrow() { return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>`; }
+
+$("#foot").innerHTML = `Unofficial. Food data from Cornell Dining's <a href="https://netnutrition.dining.cornell.edu/NetNutrition/1" target="_blank" rel="noopener">NetNutrition</a>, ${esc(DATA.scrapedAt)}. Tell staff about allergies; cross-contact can happen.`;
+// One or two plain-language notes about the item as it's currently customized.
+function insightFor(it, n) {
+  const notes = [], pct = (v, dv) => Math.round((v / dv) * 100);
+  const added = (it.addedSugars ?? 0) * S.servings;
+  if (n.protein >= 20) notes.push(`${r0(n.protein)}g of protein, about ${pct(n.protein, 50)}% of a day's worth.`);
+  else if (n.calories <= 350 && n.protein >= 12) notes.push(`A lighter pick with ${r0(n.protein)}g of protein.`);
+  if (n.sodium >= 800) notes.push(`Salty: ${r0(n.sodium)}mg of sodium is ${pct(n.sodium, 2300)}% of a day.`);
+  if (added >= 15) notes.push(`${r0(added)}g of added sugar, ${pct(added, 50)}% of the daily limit.`);
+  else if (n.satFat >= 10) notes.push(`${r0(n.satFat)}g of saturated fat, ${pct(n.satFat, 20)}% of a day.`);
+  if (n.fiber >= 5 && notes.length < 2) notes.push(`Good fiber at ${r0(n.fiber)}g.`);
+  if (!notes.length) {
+    const k = { protein: n.protein * 4, carbs: n.carbs * 4, fat: n.fat * 9 }, t = k.protein + k.carbs + k.fat;
+    if (!t) return "No calories to speak of.";
+    const top = Object.entries(k).sort((a, b) => b[1] - a[1])[0];
+    notes.push(`Most of its calories come from ${top[0]} (${Math.round((top[1] / t) * 100)}%).`);
+  }
+  return notes.slice(0, 2).join(" ");
+}
+let lastInsight = "";
+function setInsight(text) {
+  const el = $("#insightTxt"); if (!el || text === lastInsight && el.textContent) return;
+  lastInsight = text;
+  el.textContent = text;
+}
+
+/* ---------- Side rails ---------- */
+function evCard(e) {
+  const d = new Date(e.start);
+  const mon = d.toLocaleDateString("en-US", { month: "short", timeZone: TZ }).toUpperCase();
+  const day = d.toLocaleDateString("en-US", { day: "numeric", timeZone: TZ });
+  const when = d.toLocaleDateString("en-US", { weekday: "short", timeZone: TZ }) + " " + fmtTime(d / 1000);
+  return `<a class="ev" href="${esc(e.url)}" target="_blank" rel="noopener">
+    <div class="pic">${e.photo ? `<img src="${e.photo}" alt="" loading="lazy">` : ""}<span class="date"><small>${mon}</small><b>${day}</b></span></div>
+    <div class="txt"><b>${esc(e.title)}</b><small>${esc(e.place)} · ${esc(when)}</small></div></a>`;
+}
+function renderRails() {
+  const places = DATA.eateries.filter((e) => e.kind === "place").map((e) => ({ e, st: status(e) }));
+  const open = places.filter((p) => p.st?.open);
+  const soon = places.filter((p) => p.st && !p.st.open && p.st.text !== "Closed").slice(0, 5);
+  // Best protein per calorie among meals at open places (or everywhere when nothing's open).
+  const pool = new Set((open.length ? open : places).map((p) => p.e.id));
+  const seenBase = new Set();
+  const lean = Object.values(ITEMS).filter((it) => isReal(it) && meal(it) && it.protein >= 15 && pool.has(HOME[it.id]?.eatery.id) && passes(it))
+    .sort((a, b) => b.protein / b.calories - a.protein / a.calories)
+    .filter((it) => { const k = strip(it.name, ["bread", "egg", "meat"]).toLowerCase(); return !seenBase.has(k) && seenBase.add(k); }).slice(0, 5);
+  $("#railL").innerHTML = `<section>
+      <h4><span>${open.length ? "Open now" : "Opening next"}</span><span>${open.length || ""}</span></h4>
+      ${(open.length ? open : soon).map(({ e, st }) => `<button class="openrow" data-place="${e.id}"><span class="dot ${st.open ? "on" : ""}"></span><b>${esc(e.name)}</b><small>${esc(st.text.replace(/^Open /, ""))}</small></button>`).join("")}
+    </section>
+    ${lean.length ? `<section><h4><span>Most protein per calorie</span></h4><p class="rnote">${open.length ? "At places open now." : "Across campus."}</p>
+      ${lean.map((it) => `<button class="lean" data-item="${it.id}"><b>${esc(it.name)}</b><small>${esc(HOME[it.id].eatery.name)}</small>
+        <span class="lean-bar"><span style="--w:${Math.min(100, ((it.protein * 4) / it.calories) * 100 / 0.6).toFixed(0)}%"></span></span>
+        <span class="lean-n"><b>${r0(it.protein)}g</b> protein · ${r0(it.calories)} cal</span></button>`).join("")}</section>` : ""}`;
+  $("#railR").innerHTML = EVENTS.length ? `<section><h4><span>Food events</span><span>${EVENTS.length}</span></h4><p class="rnote">From Cornell's events calendar.</p>${EVENTS.map(evCard).join("")}</section>` : "";
+}
+$("#railL").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-place],[data-item]"); if (!b) return;
+  $("#q").value = ""; S.q = "";
+  if (b.dataset.place) return go("menu", { eatery: +b.dataset.place, tab: 0 });
+  const id = +b.dataset.item, it = ITEMS[id];
+  lastCal = null;
+  S.eatery = HOME[id].eatery.id;
+  go("item", { group: null, groupIds: null, from: "menu", ...itemOpts(it) });
+});
+renderRails();
+setInterval(renderRails, 60000);
+
+fromHash();
+render();
+history.replaceState(navState(0), "", location.href);
+</script>
